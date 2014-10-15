@@ -1,87 +1,79 @@
 #include <QImage>
-#include <stdio.h>
-#include <iostream>
+#include <QDebug>
 
 int main()
 {
     QImage t("lenna"); // Image sur laquelle on travaille
-    int i, j, k; // Itérateurs
-    //QGray tmp, tmp2; // Pour les calculs
-    int tmp, tmp2;
-    int gray; // Pour la conversion
+    int i, j; // Itérateurs
     int width = t.width();
     int height = t.height();
+    int V[width];
+    int M[width][height];
+    int w;
 
-    /*for(int i=0;i<256;++i)
-        t.setColor(i, qRgb(i,i,i));*/
-
-    for(k = 0; k < height; k++) // Pour chaque ligne de l'image
+    for(j = 0; j < height; j++) // On remplit la matrice d'entiers M avec les niveaux de gris de l'image
     {
-        for(j = width; j > 1; j /= 2)
+        for(i = 0; i < width; i++)
         {
-            tmp2 = qGray(t.pixel(0, k));
-            for(i = 0; i < j; i += 2)
-            {
-                tmp = tmp2;
-
-                gray = tmp/2 + qGray(t.pixel(i+1, k))/2;
-                //std::cout << i/2 << " " << k << " :" << std::endl;
-                t.setPixel(i/2, k, gray); // Coefficient d'approximation
-                //std::cout << tmp << " " << qGray(t.pixel(i+1, k)) << " moyenne " << qGray(t.pixel(i/2, k)) << std::endl;
-
-                tmp2 = qGray(t.pixel((i+j)/2, k));
-                //std::cout << (i+j)/2 << " " << k << " :" << std::endl;
-
-                if(tmp < qGray(t.pixel(i/2, k))) // Cas où le résultat est négatif
-                {
-                    t.setPixel((i+j)/2, k, 0); // On ramène à 0
-                    //std::cout << tmp << " " << qGray(t.pixel(i/2, k)) << " difference " << qGray(t.pixel((i+j)/2, k)) << std::endl;
-                }
-                else // Cas général
-                {
-                    gray = tmp - qGray(t.pixel(i/2, k));
-                    t.setPixel((i+j)/2, k, gray); // Coefficient de détail
-                    //std::cout << tmp << " " << qGray(t.pixel(i/2, k)) << " difference " << qGray(t.pixel((i+j)/2, k)) << std::endl;
-                }
-            }
+            M[i][j] = qGray(t.pixel(i,j));
+            //M[i][j] = qGray(t.color(t.pixelIndex(i,j)));
         }
     }
 
-    t.save("lines.jpg", 0);
-
-    for(k = 0; k < width; k++) // Pour chaque colonne de l'image
+    for(j = 0; j < height; j++) // Opérations sur les lignes
     {
-        for(j = height; j > 1; j /= 2)
-        {
-            tmp2 = qGray(t.pixel(k, 0));
-            for(i = 0; i < j; i += 2)
+        w = width;
+        //do
+        //{
+            for(i = 0; i < w/2 ; i++)
             {
-                tmp = tmp2;
-
-                gray = tmp/2 + qGray(t.pixel(k, i+1))/2;
-                //std::cout << k << " " << i/2 << " :" << std::endl;
-                t.setPixel(k, i/2, gray); // Coefficient d'approximation
-                //std::cout << tmp << " " << qGray(t.pixel(k, i+1)) << " moyenne " << qGray(t.pixel(k, i/2)) << std::endl;
-
-                tmp2 = qGray(t.pixel(k, (i+j)/2));
-                //std::cout << k << " " << (i+j)/2 << " :" << std::endl;
-
-                if(tmp < qGray(t.pixel(k, i/2))) // Cas où le résultat est négatif
-                {
-                    t.setPixel(k, (i+j)/2, 0); // On ramène à 0
-                    //std::cout << tmp << " " << qGray(t.pixel(k, i/2)) << " difference " << qGray(t.pixel(k, (i+j)/2)) << std::endl;
-                }
-                else // Cas général
-                {
-                    gray = tmp - qGray(t.pixel(k, i/2));
-                    t.setPixel(k, (i+j)/2, gray); // Coefficient de détail
-                    //std::cout << tmp << " " << qGray(t.pixel(k, i/2)) << " difference " << qGray(t.pixel(k, (i+j)/2)) << std::endl;
-                }
+                V[i] = (M[2*i][j] + M[2*i+1][j])/2;
+                V[i+w/2] = (M[2*i][j] - M[2*i+1][j])/2;
             }
+            for(i = 0; i < width; i++)
+            {
+                M[i][j] = V[i];
+            }
+            //w = w/2;
+        //} while(w != 1);
+    }
+
+    for(i = 0; i < width; i++) // Opérations sur les colonnes
+    {
+        w = height;
+        //do
+        //{
+            for(j = 0; j < w/2 ; j++)
+            {
+                V[j] = (M[i][2*j] + M[i][2*j+1])/2;
+                V[j+w/2] = (M[i][2*j] - M[i][2*j+1])/2;
+            }
+            for(j = 0; j < height; j++)
+            {
+                M[i][j] = V[j];
+            }
+            //w = w/2;
+        //} while(w != 1);
+    }
+
+    for(j = 0; j < height; j++) // On enlève les valeurs négatives
+    {
+        for(i = 0; i < width; i++)
+        {
+            if(M[i][j] < 0)
+                M[i][j] = 0;
         }
     }
 
-    t.save("final.jpg", 0); // On sauvegarde le résultat*/
+    for(j = 0; j < height; j++) // On modifie l'image de départ avec notre matrice M transformée
+    {
+        for(i = 0; i < width; i++)
+        {
+            t.setPixel(i, j, M[i][j]);
+        }
+    }
+
+    t.save("final.jpg", 0); // Et on la sauvegarde
 
     return 0;
 }
