@@ -4,11 +4,38 @@
 WorkSpace::WorkSpace(QImage img)
 {
     this->source = img;
-    this->width = img.width();
-    this->height = img.height();
+    unsigned int width = img.width();
+    unsigned int height = img.height();
+    int** mat; // Passer en float
+
+    mat = new int* [width];
+    for(unsigned int i = 0; i < width; i++)
+    {
+        mat[i] = new int [height];
+    }
+
+    for(unsigned int j = 0; j < height; j++) // On remplit la matrice d'entiers M avec les niveaux de gris de l'image
+    {
+        for(unsigned int i = 0; i < width; i++)
+        {
+            mat[i][j] = qGray(img.pixel(i,j));
+            //mat[i][j] = qGray(t.color(img.pixelIndex(i,j)));
+        }
+    }
+
+    matrix_list.push_back(mat);
 }
 
 WorkSpace::~WorkSpace() {
+    for(int i = 0; i < matrix_list.length(); i++)
+    {
+        for(unsigned int j = 0 ; j < this->getWidth() ; j++)
+        {
+            delete matrix_list.at(i)[j];
+        }
+
+        delete matrix_list.at(i);
+    }
     delete WorkSpace::instance;
 }
 
@@ -24,8 +51,26 @@ WorkSpace* WorkSpace::getInstance(QImage img)
 
 WorkSpace* WorkSpace::instance = 0;
 
-void WorkSpace::waveletsTransform(int** mat, int iteration)
+void WorkSpace::waveletsTransform(int** input_mat, int iteration)
 {
+    /* On crée une nouvelle matrice */
+    int** mat;
+
+    mat = new int* [this->getWidth()];
+    for(unsigned int i = 0; i < this->getWidth(); i++)
+    {
+        mat[i] = new int [this->getHeight()];
+    }
+
+    for(unsigned int j = 0; j < this->getHeight(); j++)
+    {
+        for(unsigned int i = 0; i < this->getWidth(); i++)
+        {
+            mat[i][j] = input_mat[i][j];
+        }
+    }
+
+    /* Selon l'itération, on ne parcourt pas l'intégralité de l'image */
     unsigned int width = this->getWidth() / pow(2, iteration-1);
     unsigned int height = this->getHeight() / pow(2, iteration-1);
 
@@ -59,6 +104,9 @@ void WorkSpace::waveletsTransform(int** mat, int iteration)
             mat[i][j] = vec[j];
         }
     }
+
+    /* On stocke cette matrice pour une utilisation ultérieure */
+    this->matrix_list.push_back(mat);
 }
 
 void WorkSpace::saveImage(int** mat, int iteration)
@@ -80,20 +128,25 @@ void WorkSpace::saveImage(int** mat, int iteration)
     }
 
     /* Et on la sauvegarde */
-    img.save("final" + QString::number(iteration) + ".jpg", 0);
-}
-
-unsigned int WorkSpace::getWidth()
-{
-    return this->width;
-}
-
-unsigned int WorkSpace::getHeight()
-{
-    return this->height;
+    img.save("iteration" + QString::number(iteration) + ".jpg", 0);
 }
 
 QImage WorkSpace::getSourceImage()
 {
     return this->source;
+}
+
+unsigned int WorkSpace::getWidth()
+{
+    return this->getSourceImage().width();
+}
+
+unsigned int WorkSpace::getHeight()
+{
+    return this->getSourceImage().height();
+}
+
+int** WorkSpace::getMatrix(unsigned int i)
+{
+    return this->matrix_list.at(i);
 }
