@@ -1,41 +1,36 @@
-#include "workspace.h"
+﻿#include "workspace.h"
 #include <cmath>
 
 WorkSpace::WorkSpace(QImage img)
 {
     this->source = img;
-    unsigned int width = img.width();
-    unsigned int height = img.height();
-    int** mat; // Passer en float
+    this->nb_iteration = 0;
 
-    mat = new int* [width];
-    for(unsigned int i = 0; i < width; i++)
+    this->haar_matrix = new int* [img.width()];
+    this->filter_matrix = new int* [img.width()];
+    this->synthesis_matrix = new int* [img.width()];
+
+    for(int i = 0; i < img.width(); i++)
     {
-        mat[i] = new int [height];
+        haar_matrix[i] = new int [img.height()];
+        filter_matrix[i] = new int [img.height()];
+        synthesis_matrix[i] = new int [img.height()];
     }
-
-    for(unsigned int j = 0; j < height; j++) // On remplit la matrice d'entiers M avec les niveaux de gris de l'image
-    {
-        for(unsigned int i = 0; i < width; i++)
-        {
-            mat[i][j] = qGray(img.pixel(i,j));
-            //mat[i][j] = qGray(t.color(img.pixelIndex(i,j)));
-        }
-    }
-
-    matrix_list.push_back(mat);
 }
 
-WorkSpace::~WorkSpace() {
-    for(int i = 0; i < matrix_list.length(); i++)
+WorkSpace::~WorkSpace()
+{
+    for(unsigned int j = 0 ; j < this->getWidth() ; j++)
     {
-        for(unsigned int j = 0 ; j < this->getWidth() ; j++)
-        {
-            delete matrix_list.at(i)[j];
-        }
-
-        delete matrix_list.at(i);
+        delete haar_matrix[j];
+        delete filter_matrix[j];
+        delete synthesis_matrix[j];
     }
+
+    delete haar_matrix;
+    delete filter_matrix;
+    delete synthesis_matrix;
+
     delete WorkSpace::instance;
 }
 
@@ -51,65 +46,132 @@ WorkSpace* WorkSpace::getInstance(QImage img)
 
 WorkSpace* WorkSpace::instance = 0;
 
-void WorkSpace::waveletsTransform(int** input_mat, int iteration)
+void WorkSpace::waveletsTransform(unsigned int iteration)
 {
-    /* On crée une nouvelle matrice */
-    int** mat;
+    this->nb_iteration = iteration;
 
-    mat = new int* [this->getWidth()];
-    for(unsigned int i = 0; i < this->getWidth(); i++)
+    unsigned int height = this->getHeight();
+    unsigned int width = this->getWidth();
+
+    for(unsigned int j = 0; j < height; j++) // On remplit la matrice avec les niveaux de gris de l'image source
     {
-        mat[i] = new int [this->getHeight()];
-    }
-
-    for(unsigned int j = 0; j < this->getHeight(); j++)
-    {
-        for(unsigned int i = 0; i < this->getWidth(); i++)
-        {
-            mat[i][j] = input_mat[i][j];
-        }
-    }
-
-    /* Selon l'itération, on ne parcourt pas l'intégralité de l'image */
-    unsigned int width = this->getWidth() / pow(2, iteration-1);
-    unsigned int height = this->getHeight() / pow(2, iteration-1);
-
-    /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-    int vec[(width > height) ? width : height]; // Passer en float
-
-    /* Opérations sur les lignes */
-    for(unsigned int j = 0; j < height; j++)
-    {
-        for(unsigned int i = 0; i < width/2 ; i++)
-        {
-            vec[i] = (mat[2*i][j] + mat[2*i+1][j])/2;
-            vec[i+width/2] = (mat[2*i][j] - mat[2*i+1][j])/2;
-        }
         for(unsigned int i = 0; i < width; i++)
         {
-            mat[i][j] = vec[i];
+            this->haar_matrix[i][j] = qGray(this->getSourceImage().pixel(i,j));
+            //this->haar_matrix[i][j] = qGray(t.color(img.pixelIndex(i,j)));
         }
     }
 
-    /* Opérations sur les colonnes */
-    for(unsigned int i = 0; i < width; i++)
+    for(unsigned int it = 1; it <= iteration; it++, width /= 2, height /= 2)
     {
-        for(unsigned int j = 0; j < height/2 ; j++)
-        {
-            vec[j] = (mat[i][2*j] + mat[i][2*j+1])/2;
-            vec[j+height/2] = (mat[i][2*j] - mat[i][2*j+1])/2;
-        }
+        /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
+        int vec[(width > height) ? width : height]; // Passer en float
+
+        /* Opérations sur les lignes */
         for(unsigned int j = 0; j < height; j++)
         {
-            mat[i][j] = vec[j];
+            for(unsigned int i = 0; i < width/2 ; i++)
+            {
+                vec[i] = (this->haar_matrix[2*i][j] + this->haar_matrix[2*i+1][j])/2;
+                vec[i+width/2] = (this->haar_matrix[2*i][j] - this->haar_matrix[2*i+1][j])/2;
+            }
+            for(unsigned int i = 0; i < width; i++)
+            {
+                this->haar_matrix[i][j] = vec[i];
+            }
+        }
+
+        /* Opérations sur les colonnes */
+        for(unsigned int i = 0; i < width; i++)
+        {
+            for(unsigned int j = 0; j < height/2 ; j++)
+            {
+                vec[j] = (this->haar_matrix[i][2*j] + this->haar_matrix[i][2*j+1])/2;
+                vec[j+height/2] = (this->haar_matrix[i][2*j] - this->haar_matrix[i][2*j+1])/2;
+            }
+            for(unsigned int j = 0; j < height; j++)
+            {
+                this->haar_matrix[i][j] = vec[j];
+            }
+        }
+    }
+}
+
+void WorkSpace::waveletsReverseTransform(int** mat)
+{
+    unsigned int height = this->getHeight()/pow(2, this->getNbIteration()-1);
+    unsigned int width = this->getWidth()/pow(2, this->getNbIteration()-1);
+
+    for(unsigned int i = 0; i < this->getWidth(); i++)
+    {
+        for(unsigned int j = 0; j < this->getHeight(); j++)
+        {
+            synthesis_matrix[i][j] = mat[i][j];
         }
     }
 
-    /* On stocke cette matrice pour une utilisation ultérieure */
-    this->matrix_list.push_back(mat);
+    for(unsigned int it = this->getNbIteration(); it >= 1; it--, width *= 2, height *= 2)
+    {
+        /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
+        int vec[(width > height) ? width : height]; // Passer en float
+
+        /* Opérations sur les colonnes */
+        for(unsigned int i = 0; i < width; i++)
+        {
+            for(unsigned int j = 0; j < height/2 ; j++)
+            {
+                vec[2*j] = this->synthesis_matrix[i][j] + this->synthesis_matrix[i][j+height/2];
+                vec[2*j+1] = this->synthesis_matrix[i][j] - this->synthesis_matrix[i][j+height/2];
+            }
+            for(unsigned int j = 0; j < height; j++)
+            {
+                this->synthesis_matrix[i][j] = vec[j];
+            }
+        }
+
+        /* Opérations sur les lignes */
+        for(unsigned int j = 0; j < height; j++)
+        {
+            for(unsigned int i = 0; i < width/2 ; i++)
+            {
+                vec[2*i] = this->synthesis_matrix[i][j] + this->synthesis_matrix[i+width/2][j];
+                vec[2*i+1] = this->synthesis_matrix[i][j] - this->synthesis_matrix[i+width/2][j];
+            }
+            for(unsigned int i = 0; i < width; i++)
+            {
+                this->synthesis_matrix[i][j] = vec[i];
+            }
+        }
+    }
 }
 
-void WorkSpace::saveImage(int** mat, int iteration)
+void WorkSpace::zeroFilter(int** mat)
+{
+    for(unsigned int i = 0; i < this->getWidth(); i++)
+    {
+        for(unsigned int j = 0; j < this->getHeight(); j++)
+        {
+            filter_matrix[i][j] = mat[i][j];
+        }
+    }
+
+    for(unsigned int i = 0; i < this->getWidth()/pow(2,this->getNbIteration()-1); i++)
+    {
+        for(unsigned int j = 0; j < this->getHeight()/pow(2,this->getNbIteration()-1); j++)
+        {
+            if(i < this->getWidth()/pow(2,this->getNbIteration()) && j < this->getHeight()/pow(2,this->getNbIteration()))
+            {
+                continue;
+            }
+            else
+            {
+                filter_matrix[i][j] = 0;
+            }
+        }
+    }
+}
+
+void WorkSpace::saveImage(int** mat)
 {
     unsigned int width = this->getWidth();
     unsigned int height = this->getHeight();
@@ -122,13 +184,23 @@ void WorkSpace::saveImage(int** mat, int iteration)
     {
         for(unsigned int i = 0; i < width; i++)
         {
-            if(mat[i][j] < 0) img.setPixel(i, j, -mat[i][j]);
-            else img.setPixel(i, j, mat[i][j]);
+            if(mat[i][j] < 0)
+            {
+                img.setPixel(i, j, -mat[i][j]);
+            }
+            else if(mat[i][j] > 255)
+            {
+                img.setPixel(i, j, mat[i][j]-255);
+            }
+            else
+            {
+                img.setPixel(i, j, mat[i][j]);
+            }
         }
     }
 
     /* Et on la sauvegarde */
-    img.save("iteration" + QString::number(iteration) + ".jpg", 0);
+    img.save("final.jpg", 0);
 }
 
 QImage WorkSpace::getSourceImage()
@@ -146,7 +218,22 @@ unsigned int WorkSpace::getHeight()
     return this->getSourceImage().height();
 }
 
-int** WorkSpace::getMatrix(unsigned int i)
+unsigned int WorkSpace::getNbIteration()
 {
-    return this->matrix_list.at(i);
+    return this->nb_iteration;
+}
+
+int** WorkSpace::getHaarMatrix()
+{
+    return this->haar_matrix;
+}
+
+int** WorkSpace::getFilterMatrix()
+{
+    return this->filter_matrix;
+}
+
+int** WorkSpace::getSynthesisMatrix()
+{
+    return this->synthesis_matrix;
 }

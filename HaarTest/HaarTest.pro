@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core
+QT       += widgets
 
 TARGET = HaarTest
 CONFIG   += console
@@ -14,7 +15,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    workspace.cpp
+    workspace.cpp \
+    mainwindow.cpp
 
 HEADERS += \
-    workspace.h
+    workspace.h \
+    mainwindow.h
