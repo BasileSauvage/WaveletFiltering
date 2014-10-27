@@ -10,12 +10,17 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    MainWindow(QImage img, int** mat, QWidget *parent = 0);
-    QGraphicsView * source_view;
-    QGraphicsView * haar_view;
+    MainWindow(QImage img, QWidget *parent = 0);
 
-    QGraphicsScene * source_scene;
-    QGraphicsScene * haar_scene;
+    QGraphicsView* source_view;
+    QGraphicsView* haar_view;
+    QGraphicsView* filter_view;
+    QGraphicsView* synthesis_view;
+
+    QGraphicsScene* source_scene;
+    QGraphicsScene* haar_scene;
+    QGraphicsScene* filter_scene;
+    QGraphicsScene* synthesis_scene;
 
 signals:
 

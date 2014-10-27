@@ -11,24 +11,25 @@ public:
     ~WorkSpace();
     static WorkSpace* getInstance(QImage img);
     void waveletsTransform(unsigned int iteration);
-    void waveletsReverseTransform(int** mat);
-    void zeroFilter(int** mat);
-    void saveImage(int** mat);
+    void waveletsReverseTransform(float** mat);
+    void zeroFilter(float** mat);
+    void saveImage(float** mat);
 
     QImage getSourceImage();
+    QImage getImageFromMatrix(float** mat);
     unsigned int getWidth();
     unsigned int getHeight();
     unsigned int getNbIteration();
-    int** getHaarMatrix();
-    int** getFilterMatrix();
-    int** getSynthesisMatrix();
+    float** getHaarMatrix();
+    float** getFilterMatrix();
+    float** getSynthesisMatrix();
 
 private:
     QImage source;
     unsigned int nb_iteration;
-    int** haar_matrix;
-    int** filter_matrix;
-    int** synthesis_matrix;
+    float** haar_matrix;
+    float** filter_matrix;
+    float** synthesis_matrix;
     static WorkSpace* instance; // singleton
 };
 

@@ -3,18 +3,19 @@
 
 WorkSpace::WorkSpace(QImage img)
 {
-    this->source = img;
+    //this->source = img;
+    this->source = img.convertToFormat(QImage::Format_ARGB32);
     this->nb_iteration = 0;
 
-    this->haar_matrix = new int* [img.width()];
-    this->filter_matrix = new int* [img.width()];
-    this->synthesis_matrix = new int* [img.width()];
+    this->haar_matrix = new float* [img.width()];
+    this->filter_matrix = new float* [img.width()];
+    this->synthesis_matrix = new float* [img.width()];
 
     for(int i = 0; i < img.width(); i++)
     {
-        haar_matrix[i] = new int [img.height()];
-        filter_matrix[i] = new int [img.height()];
-        synthesis_matrix[i] = new int [img.height()];
+        haar_matrix[i] = new float [img.height()];
+        filter_matrix[i] = new float [img.height()];
+        synthesis_matrix[i] = new float [img.height()];
     }
 }
 
@@ -57,15 +58,15 @@ void WorkSpace::waveletsTransform(unsigned int iteration)
     {
         for(unsigned int i = 0; i < width; i++)
         {
+            //this->haar_matrix[i][j] = this->getSourceImage().pixel(i,j);
             this->haar_matrix[i][j] = qGray(this->getSourceImage().pixel(i,j));
-            //this->haar_matrix[i][j] = qGray(t.color(img.pixelIndex(i,j)));
+            //this->haar_matrix[i][j] = qGray(this->getSourceImage().color(this->getSourceImage().pixelIndex(i,j)));
         }
     }
-
     for(unsigned int it = 1; it <= iteration; it++, width /= 2, height /= 2)
     {
         /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-        int vec[(width > height) ? width : height]; // Passer en float
+        float vec[(width > height) ? width : height]; // Passer en float
 
         /* Opérations sur les lignes */
         for(unsigned int j = 0; j < height; j++)
@@ -97,7 +98,7 @@ void WorkSpace::waveletsTransform(unsigned int iteration)
     }
 }
 
-void WorkSpace::waveletsReverseTransform(int** mat)
+void WorkSpace::waveletsReverseTransform(float** mat)
 {
     unsigned int height = this->getHeight()/pow(2, this->getNbIteration()-1);
     unsigned int width = this->getWidth()/pow(2, this->getNbIteration()-1);
@@ -113,7 +114,7 @@ void WorkSpace::waveletsReverseTransform(int** mat)
     for(unsigned int it = this->getNbIteration(); it >= 1; it--, width *= 2, height *= 2)
     {
         /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-        int vec[(width > height) ? width : height]; // Passer en float
+        float vec[(width > height) ? width : height]; // Passer en float
 
         /* Opérations sur les colonnes */
         for(unsigned int i = 0; i < width; i++)
@@ -145,7 +146,7 @@ void WorkSpace::waveletsReverseTransform(int** mat)
     }
 }
 
-void WorkSpace::zeroFilter(int** mat)
+void WorkSpace::zeroFilter(float** mat)
 {
     for(unsigned int i = 0; i < this->getWidth(); i++)
     {
@@ -171,13 +172,13 @@ void WorkSpace::zeroFilter(int** mat)
     }
 }
 
-void WorkSpace::saveImage(int** mat)
+void WorkSpace::saveImage(float** mat)
 {
     unsigned int width = this->getWidth();
     unsigned int height = this->getHeight();
 
-    QImage img;
-    img = this->getSourceImage();
+    QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
+    //img = this->getSourceImage();
 
     /* On modifie l'image à partir de la matrice d'entrée */
     for(unsigned int j = 0; j < height; j++)
@@ -186,21 +187,45 @@ void WorkSpace::saveImage(int** mat)
         {
             if(mat[i][j] < 0)
             {
-                img.setPixel(i, j, -mat[i][j]);
+                img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
             }
             else if(mat[i][j] > 255)
             {
-                img.setPixel(i, j, mat[i][j]-255);
+                img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
             }
             else
             {
-                img.setPixel(i, j, mat[i][j]);
+                img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
             }
         }
     }
 
     /* Et on la sauvegarde */
     img.save("final.jpg", 0);
+}
+
+QImage WorkSpace::getImageFromMatrix(float** mat)
+{
+    QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
+
+    for(unsigned int j = 0; j < this->getHeight(); j++)
+    {
+        for(unsigned int i = 0; i < this->getWidth(); i++)
+            if(mat[i][j] < 0)
+            {
+                img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
+            }
+            else if(mat[i][j] > 255)
+            {
+                img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
+            }
+            else
+            {
+                img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
+            }
+    }
+
+    return img;
 }
 
 QImage WorkSpace::getSourceImage()
@@ -223,17 +248,17 @@ unsigned int WorkSpace::getNbIteration()
     return this->nb_iteration;
 }
 
-int** WorkSpace::getHaarMatrix()
+float** WorkSpace::getHaarMatrix()
 {
     return this->haar_matrix;
 }
 
-int** WorkSpace::getFilterMatrix()
+float** WorkSpace::getFilterMatrix()
 {
     return this->filter_matrix;
 }
 
-int** WorkSpace::getSynthesisMatrix()
+float** WorkSpace::getSynthesisMatrix()
 {
     return this->synthesis_matrix;
 }
