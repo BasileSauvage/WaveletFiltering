@@ -9,7 +9,8 @@ class WorkSpace
 public:
     WorkSpace(QImage img);
     ~WorkSpace();
-    static WorkSpace* getInstance(QImage img);
+    static void newInstance(QImage img);
+    static WorkSpace* getInstance();
     void waveletsTransform(unsigned int iteration);
     void waveletsReverseTransform(float** mat);
     void zeroFilter(float** mat);

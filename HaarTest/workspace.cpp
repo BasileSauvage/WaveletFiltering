@@ -3,7 +3,6 @@
 
 WorkSpace::WorkSpace(QImage img)
 {
-    //this->source = img;
     this->source = img.convertToFormat(QImage::Format_ARGB32);
     this->nb_iteration = 0;
 
@@ -35,10 +34,16 @@ WorkSpace::~WorkSpace()
     delete WorkSpace::instance;
 }
 
-WorkSpace* WorkSpace::getInstance(QImage img)
+void WorkSpace::newInstance(QImage img)
+{
+    WorkSpace::instance = new WorkSpace(img);
+}
+
+WorkSpace* WorkSpace::getInstance()
 {
     if(WorkSpace::instance == 0)
     {
+        QImage img;
         WorkSpace::instance = new WorkSpace(img);
     }
 
