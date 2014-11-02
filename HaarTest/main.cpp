@@ -1,4 +1,3 @@
-#include "workspace.h"
 #include "mainwindow.h"
 #include <QApplication>
 
@@ -13,4 +12,5 @@ int main(int argc, char* argv[])
 }
 
 // TODO : Réfléchir au zoom (algo)
-// TODO : UI -> Pouvoir changer le niveau d'analyse dans l'UI / Rendre le tout plus esthétique et ergonomique
+// TODO : UI -> Mettre chaque affichage dans une fonction différente à appeler
+// TODO : UI -> Synchroniser les vues

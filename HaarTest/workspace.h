@@ -14,7 +14,7 @@ public:
     void waveletsTransform(unsigned int iteration);
     void waveletsReverseTransform(float** mat);
     void zeroFilter(float** mat);
-    void saveImage(float** mat);
+    void saveImage(QImage img, QString fileName);
 
     QImage getSourceImage();
     QImage getImageFromMatrix(float** mat);

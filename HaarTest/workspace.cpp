@@ -1,6 +1,10 @@
 ﻿#include "workspace.h"
 #include <cmath>
 
+/**
+  * @brief Constructeur
+  * @param img image source sur laquelle nous allons travailler
+  */
 WorkSpace::WorkSpace(QImage img)
 {
     this->source = img.convertToFormat(QImage::Format_ARGB32);
@@ -18,6 +22,9 @@ WorkSpace::WorkSpace(QImage img)
     }
 }
 
+/**
+  * @brief Destructeur
+  */
 WorkSpace::~WorkSpace()
 {
     for(unsigned int j = 0 ; j < this->getWidth() ; j++)
@@ -34,11 +41,19 @@ WorkSpace::~WorkSpace()
     delete WorkSpace::instance;
 }
 
+/**
+ * @brief Création d'une instance unique de la classe
+ * @param img image source sur laquelle nous allons travailler
+ */
 void WorkSpace::newInstance(QImage img)
 {
     WorkSpace::instance = new WorkSpace(img);
 }
 
+/**
+ * @brief Récupération de l'instance unique de la classe
+ * @return singleton
+ */
 WorkSpace* WorkSpace::getInstance()
 {
     if(WorkSpace::instance == 0)
@@ -50,8 +65,15 @@ WorkSpace* WorkSpace::getInstance()
     return WorkSpace::instance;
 }
 
+/**
+ * @brief Initialisation de l'instance
+ */
 WorkSpace* WorkSpace::instance = 0;
 
+/**
+ * @brief Transformation en ondelettes discrète d'une image (base de Haar)
+ * @param iteration nombre de fois où l'on souhaite effectuer la transformation
+ */
 void WorkSpace::waveletsTransform(unsigned int iteration)
 {
     this->nb_iteration = iteration;
@@ -103,6 +125,10 @@ void WorkSpace::waveletsTransform(unsigned int iteration)
     }
 }
 
+/**
+ * @brief Transformation en ondelettes discrète inverse d'une image
+ * @param mat la matrice de coefficients sur laquelle appliquer la transformation
+ */
 void WorkSpace::waveletsReverseTransform(float** mat)
 {
     unsigned int height = this->getHeight()/pow(2, this->getNbIteration()-1);
@@ -151,6 +177,10 @@ void WorkSpace::waveletsReverseTransform(float** mat)
     }
 }
 
+/**
+ * @brief Transforme une matrice de coefficients en remplaçant ceux générés lors du dernier niveau d'analyse par 0
+ * @param mat la matrice de coefficients sur laquelle appliquer la transformation
+ */
 void WorkSpace::zeroFilter(float** mat)
 {
     for(unsigned int i = 0; i < this->getWidth(); i++)
@@ -177,38 +207,21 @@ void WorkSpace::zeroFilter(float** mat)
     }
 }
 
-void WorkSpace::saveImage(float** mat)
+/**
+ * @brief Sauvegarde une image dans le répertoire courant
+ * @param img l'image à sauvegarder
+ * @param fileName le nom de l'image
+ */
+void WorkSpace::saveImage(QImage img, QString fileName)
 {
-    unsigned int width = this->getWidth();
-    unsigned int height = this->getHeight();
-
-    QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
-    //img = this->getSourceImage();
-
-    /* On modifie l'image à partir de la matrice d'entrée */
-    for(unsigned int j = 0; j < height; j++)
-    {
-        for(unsigned int i = 0; i < width; i++)
-        {
-            if(mat[i][j] < 0)
-            {
-                img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
-            }
-            else if(mat[i][j] > 255)
-            {
-                img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
-            }
-            else
-            {
-                img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
-            }
-        }
-    }
-
-    /* Et on la sauvegarde */
-    img.save("final.jpg", 0);
+    img.save(fileName, 0);
 }
 
+/**
+ * @brief Transforme une matrice de coefficients en image, les coefficients hors des bornes des niveaux de gris sont modifiés
+ * @param mat la matrice de coefficients à convertir en image
+ * @return matrice convertie
+ */
 QImage WorkSpace::getImageFromMatrix(float** mat)
 {
     QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
@@ -233,36 +246,64 @@ QImage WorkSpace::getImageFromMatrix(float** mat)
     return img;
 }
 
+/**
+ * @brief Renvoie l'image source
+ * @return image source
+ */
 QImage WorkSpace::getSourceImage()
 {
     return this->source;
 }
 
+/**
+ * @brief Renvoie la largeur de l'image source
+ * @return largeur de l'image source
+ */
 unsigned int WorkSpace::getWidth()
 {
     return this->getSourceImage().width();
 }
 
+/**
+ * @brief Renvoie la hauteur de l'image source
+ * @return hauteur de l'image source
+ */
 unsigned int WorkSpace::getHeight()
 {
     return this->getSourceImage().height();
 }
 
+/**
+ * @brief Renvoie le niveau d'analyse actuel
+ * @return nombre de fois où on a appliqué la transformation en ondelettes discrète
+ */
 unsigned int WorkSpace::getNbIteration()
 {
     return this->nb_iteration;
 }
 
+/**
+ * @brief Renvoie la matrice de coefficients d'ondelettes
+ * @return matrice de coefficients de Haar
+ */
 float** WorkSpace::getHaarMatrix()
 {
     return this->haar_matrix;
 }
 
+/**
+ * @brief Renvoie la matrice résultant de l'application d'un filtre
+ * @return matrice de coefficients après application d'un filtre
+ */
 float** WorkSpace::getFilterMatrix()
 {
     return this->filter_matrix;
 }
 
+/**
+ * @brief Renvoie la matrice de coefficients après transformation en ondelettes inverse
+ * @return matrice de coefficients après synthèse
+ */
 float** WorkSpace::getSynthesisMatrix()
 {
     return this->synthesis_matrix;

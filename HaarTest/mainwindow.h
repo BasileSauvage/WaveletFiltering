@@ -6,10 +6,11 @@
 #include <QGraphicsScene>
 #include <QMenuBar>
 #include <QMenu>
+#include <QSlider>
 #include <QAction>
 #include <QFileDialog>
 
-enum status{LOAD, HAAR, FILTER, SYNTH};
+enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM};
 
 class MainWindow : public QMainWindow
 {
@@ -33,6 +34,9 @@ public:
     QGraphicsScene* synthesis_scene;
 
     QWidget* main_widget;
+    QWidget* tool_widget;
+
+    QSlider* zoom_slider;
 
     QAction* action_load;
     QAction* action_save;
@@ -41,14 +45,19 @@ public:
     QAction* action_reverse_haar;
     QAction* action_zero_filter;
 
+    int getZoomLevel();
+
 private:
+    int zoom_level;
+
     void runUI();
     void updateUI(status origin);
     void connectActions();
 
 public slots:
+    void zoomModifier(int val);
     void actionLoad();
-    //void actionSave();
+    void actionSave();
     void actionHaar();
     void actionReverseHaar();
     void actionZeroFilter();
