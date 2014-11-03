@@ -9,6 +9,8 @@
 #include <QSlider>
 #include <QAction>
 #include <QFileDialog>
+#include <QScrollBar>
+
 
 enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM};
 
@@ -52,6 +54,10 @@ private:
 
     void runUI();
     void updateUI(status origin);
+    void sourceDisplayer();
+    void haarDisplayer();
+    void filterDisplayer();
+    void synthesisDisplayer();
     void connectActions();
 
 public slots:
@@ -61,6 +67,8 @@ public slots:
     void actionHaar();
     void actionReverseHaar();
     void actionZeroFilter();
+    void updateHScrollBar(int val);
+    void updateVScrollBar(int val);
 };
 
 #endif // MAINWINDOW_H

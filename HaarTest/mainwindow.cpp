@@ -4,6 +4,10 @@
 #include <QInputDialog>
 #include <iostream>
 
+/**
+  * @brief Constructeur
+  * @param parent
+  */
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
@@ -11,8 +15,14 @@ MainWindow::MainWindow(QWidget *parent) :
     this->connectActions();
 }
 
+/**
+  * @brief Destructeur
+  */
 MainWindow::~MainWindow() {}
 
+/**
+  * @brief Initialise les éléments de la fenêtre
+  */
 void MainWindow::runUI()
 {
     this->resize(1024, 800);
@@ -81,65 +91,105 @@ void MainWindow::runUI()
     this->setCentralWidget(this->main_widget);
 }
 
-void MainWindow::updateUI(status action)
+/**
+  * @brief Met à jour les éléments de la fenêtre
+  * @param origin source qui requiert une mise à jour de la fenêtre
+  */
+void MainWindow::updateUI(status origin)
 {
-    WorkSpace* ws = WorkSpace::getInstance();
-
-    switch(action)
+    switch(origin)
     {
         case LOAD :
-        {
-            this->action_haar->setEnabled(true);
-            this->source_scene->clear();
-            QPixmap source_map(QPixmap::fromImage(ws->getSourceImage()));
-            source_map = source_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
-            this->source_scene->addPixmap(source_map);
-            this->source_view->setSceneRect(this->source_scene->itemsBoundingRect());
+            this->sourceDisplayer();
             break;
-        }
         case HAAR :
-        {
-            this->action_zero_filter->setEnabled(true);
-            this->haar_scene->clear();
-            QPixmap haar_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getHaarMatrix())));
-            haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel()); // à changer
-            this->haar_scene->addPixmap(haar_map);
-            this->haar_view->setSceneRect(this->haar_scene->itemsBoundingRect());
+            this->haarDisplayer();
             break;
-        }
         case FILTER :
-        {
-            this->action_reverse_haar->setEnabled(true);
-            this->filter_scene->clear();
-            QPixmap filter_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getFilterMatrix())));
-            filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel()); // à changer
-            this->filter_scene->addPixmap(filter_map);
-            this->filter_view->setSceneRect(this->filter_scene->itemsBoundingRect());
+            this->filterDisplayer();
             break;
-        }
         case SYNTH :
-        {
-            this->action_save->setEnabled(true);
-            this->zoom_slider->setEnabled(true);
-            this->synthesis_scene->clear();
-            QPixmap synthesis_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getSynthesisMatrix())));
-            synthesis_map = synthesis_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
-            this->synthesis_scene->addPixmap(synthesis_map);
-            this->synthesis_view->setSceneRect(this->synthesis_scene->itemsBoundingRect());
+            this->synthesisDisplayer();
             break;
-        }
         case ZOOM :
-        {
-            this->updateUI(LOAD);
-            this->updateUI(HAAR);
-            this->updateUI(FILTER);
-            this->updateUI(SYNTH);
-        }
+            this->sourceDisplayer();
+            this->haarDisplayer();
+            this->filterDisplayer();
+            this->synthesisDisplayer();
+            break;
         default :
             break;
     }
 }
 
+/**
+  * @brief Affiche l'image source
+  */
+void MainWindow::sourceDisplayer()
+{
+    WorkSpace* ws = WorkSpace::getInstance();
+
+    this->action_haar->setEnabled(true);
+    this->source_scene->clear();
+
+    QPixmap source_map(QPixmap::fromImage(ws->getSourceImage()));
+    source_map = source_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
+    this->source_scene->addPixmap(source_map);
+    this->source_view->setSceneRect(this->source_scene->itemsBoundingRect());
+}
+
+/**
+  * @brief Affiche la base de Haar
+  */
+void MainWindow::haarDisplayer()
+{
+    WorkSpace* ws = WorkSpace::getInstance();
+
+    this->action_zero_filter->setEnabled(true);
+    this->haar_scene->clear();
+
+    QPixmap haar_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getHaarMatrix())));
+    haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel()); // à changer
+    this->haar_scene->addPixmap(haar_map);
+    this->haar_view->setSceneRect(this->haar_scene->itemsBoundingRect());
+}
+
+/**
+  * @brief Affiche le résultat du filtrage
+  */
+void MainWindow::filterDisplayer()
+{
+    WorkSpace* ws = WorkSpace::getInstance();
+
+    this->action_reverse_haar->setEnabled(true);
+    this->filter_scene->clear();
+
+    QPixmap filter_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getFilterMatrix())));
+    filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel()); // à changer
+    this->filter_scene->addPixmap(filter_map);
+    this->filter_view->setSceneRect(this->filter_scene->itemsBoundingRect());
+}
+
+/**
+  * @brief Affiche l'image synthèse
+  */
+void MainWindow::synthesisDisplayer()
+{
+    WorkSpace* ws = WorkSpace::getInstance();
+
+    this->action_save->setEnabled(true);
+    this->zoom_slider->setEnabled(true);
+    this->synthesis_scene->clear();
+
+    QPixmap synthesis_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getSynthesisMatrix())));
+    synthesis_map = synthesis_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
+    this->synthesis_scene->addPixmap(synthesis_map);
+    this->synthesis_view->setSceneRect(this->synthesis_scene->itemsBoundingRect());
+}
+
+/**
+  * @brief Connecte les actions et les slots
+  */
 void MainWindow::connectActions()
 {
     QObject::connect(this->zoom_slider, SIGNAL(valueChanged(int)), this, SLOT(zoomModifier(int)));
@@ -149,14 +199,28 @@ void MainWindow::connectActions()
     QObject::connect(this->action_haar, SIGNAL(triggered()), this, SLOT(actionHaar()));
     QObject::connect(this->action_reverse_haar, SIGNAL(triggered()), this, SLOT(actionReverseHaar()));
     QObject::connect(this->action_zero_filter, SIGNAL(triggered()), this, SLOT(actionZeroFilter()));
+    QObject::connect(this->source_view->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateHScrollBar(int)));
+    QObject::connect(this->source_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateVScrollBar(int)));
+    QObject::connect(this->haar_view->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateHScrollBar(int)));
+    QObject::connect(this->haar_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateVScrollBar(int)));
+    QObject::connect(this->filter_view->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateHScrollBar(int)));
+    QObject::connect(this->filter_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateVScrollBar(int)));
+    QObject::connect(this->synthesis_view->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateHScrollBar(int)));
+    QObject::connect(this->synthesis_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateVScrollBar(int)));
 }
 
+/**
+  * @brief Slot qui va gérer les déplacements du slider de zoom
+  */
 void MainWindow::zoomModifier(int val)
 {
     this->zoom_level = val;
     this->updateUI(ZOOM);
 }
 
+/**
+  * @brief Slot qui va charger l'image sur laquelle travailler
+  */
 void MainWindow::actionLoad()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Choisir une image"), "../Images", tr("Images (*.jpg *.bmp)"));
@@ -169,6 +233,9 @@ void MainWindow::actionLoad()
     }
 }
 
+/**
+  * @brief Slot qui va sauvegarder les différents résultats
+  */
 void MainWindow::actionSave()
 {
     WorkSpace* ws = WorkSpace::getInstance();
@@ -177,6 +244,9 @@ void MainWindow::actionSave()
     ws->saveImage(ws->getImageFromMatrix(ws->getSynthesisMatrix()), "synthesis.jpg");
 }
 
+/**
+  * @brief Slot qui va déclencher la transformée en ondelettes discrète
+  */
 void MainWindow::actionHaar()
 {   
     WorkSpace* ws = WorkSpace::getInstance();
@@ -196,6 +266,9 @@ void MainWindow::actionHaar()
     }
 }
 
+/**
+  * @brief Slot qui va déclencher la transformée en ondelettes inverse
+  */
 void MainWindow::actionReverseHaar()
 {
     WorkSpace* ws = WorkSpace::getInstance();
@@ -203,6 +276,9 @@ void MainWindow::actionReverseHaar()
     this->updateUI(SYNTH);
 }
 
+/**
+  * @brief Slot qui appliquer le "filtre zéro" sur l'image
+  */
 void MainWindow::actionZeroFilter()
 {
     WorkSpace* ws = WorkSpace::getInstance();
@@ -210,6 +286,32 @@ void MainWindow::actionZeroFilter()
     this->updateUI(FILTER);
 }
 
+/**
+  * @brief Slot qui déplacement simultanément tous les sliders horizontaux
+  */
+void MainWindow::updateHScrollBar(int val)
+{
+    this->source_view->horizontalScrollBar()->setValue(val);
+    this->haar_view->horizontalScrollBar()->setValue(val);
+    this->filter_view->horizontalScrollBar()->setValue(val);
+    this->synthesis_view->horizontalScrollBar()->setValue(val);
+}
+
+/**
+  * @brief Slot qui déplacement simultanément tous les sliders verticaux
+  */
+void MainWindow::updateVScrollBar(int val)
+{
+    this->source_view->verticalScrollBar()->setValue(val);
+    this->haar_view->verticalScrollBar()->setValue(val);
+    this->filter_view->verticalScrollBar()->setValue(val);
+    this->synthesis_view->verticalScrollBar()->setValue(val);
+}
+
+/**
+  * @brief Accesseur du niveau de zoom
+  * @return niveau de zoom
+  */
 int MainWindow::getZoomLevel()
 {
     return this->zoom_level;

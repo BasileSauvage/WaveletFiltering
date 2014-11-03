@@ -12,5 +12,3 @@ int main(int argc, char* argv[])
 }
 
 // TODO : Réfléchir au zoom (algo)
-// TODO : UI -> Mettre chaque affichage dans une fonction différente à appeler
-// TODO : UI -> Synchroniser les vues
