@@ -14,11 +14,26 @@ WorkSpace::WorkSpace(QImage img)
     this->filter_matrix = new float* [img.width()];
     this->synthesis_matrix = new float* [img.width()];
 
+    this->selected_block.top_left_x = 0;
+    this->selected_block.top_left_y = 0;
+    this->selected_block.bottom_right_x = img.width()-1;
+    this->selected_block.bottom_right_y = img.height()-1;
+
     for(int i = 0; i < img.width(); i++)
     {
         haar_matrix[i] = new float [img.height()];
         filter_matrix[i] = new float [img.height()];
         synthesis_matrix[i] = new float [img.height()];
+    }
+
+    for(int j = 0; j < img.height(); j++)
+    {
+        for(int i = 0; i < img.width(); i++)
+        {
+            haar_matrix[i][j] = 0;
+            filter_matrix[i][j] = 0;
+            synthesis_matrix[i][j] = 0;
+        }
     }
 }
 
@@ -191,11 +206,11 @@ void WorkSpace::zeroFilter(float** mat)
         }
     }
 
-    for(unsigned int i = 0; i < this->getWidth()/pow(2,this->getNbIteration()-1); i++)
+    for(unsigned int i = 0; i < this->getWidth()/pow(2, this->getNbIteration()-1); i++)
     {
-        for(unsigned int j = 0; j < this->getHeight()/pow(2,this->getNbIteration()-1); j++)
+        for(unsigned int j = 0; j < this->getHeight()/pow(2, this->getNbIteration()-1); j++)
         {
-            if(i < this->getWidth()/pow(2,this->getNbIteration()) && j < this->getHeight()/pow(2,this->getNbIteration()))
+            if(i < this->getWidth()/pow(2, this->getNbIteration()) && j < this->getHeight()/pow(2, this->getNbIteration()))
             {
                 continue;
             }
@@ -214,7 +229,7 @@ void WorkSpace::zeroFilter(float** mat)
  */
 void WorkSpace::saveImage(QImage img, QString fileName)
 {
-    img.save(fileName, 0);
+    img.save(fileName, 0, 100);
 }
 
 /**
@@ -244,6 +259,68 @@ QImage WorkSpace::getImageFromMatrix(float** mat)
     }
 
     return img;
+}
+
+/**
+ * @brief Réinitialise le WorkSpace en partant de l'image résultat
+ */
+void WorkSpace::swap()
+{
+    this->source = this->getImageFromMatrix(this->synthesis_matrix);
+    for(unsigned int i = 0; i < this->getWidth(); i++)
+    {
+        for(unsigned int j = 0; j < this->getHeight(); j++)
+        {
+            haar_matrix[i][j] = 0;
+            filter_matrix[i][j] = 0;
+            synthesis_matrix[i][j] = 0;
+        }
+    }
+
+    this->nb_iteration = 0;
+
+    this->selected_block.top_left_x = 0;
+    this->selected_block.top_left_y = 0;
+    this->selected_block.bottom_right_x = this->getWidth()-1;
+    this->selected_block.bottom_right_y = this->getHeight()-1;
+}
+
+/**
+ * @brief Remplit la structure contenant le bloc sélectionné
+ * @param choice le bloc désiré
+ * @param iteration le niveau d'analyse désiré
+ */
+void WorkSpace::setSelectedBlock(block_choice choice, unsigned int iteration)
+{
+    switch(choice)
+    {
+        case LOWRES:
+            this->selected_block.top_left_x = 0;
+            this->selected_block.top_left_y = 0;
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration)-1;
+            break;
+        case DIAGONAL:
+            this->selected_block.top_left_x = this->getWidth()/pow(2, iteration);
+            this->selected_block.top_left_y = this->getHeight()/pow(2, iteration);
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration-1)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration-1)-1;
+            break;
+        case VERTICAL:
+            this->selected_block.top_left_x = this->getWidth()/pow(2, iteration);
+            this->selected_block.top_left_y = 0;
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration-1)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration)-1;
+            break;
+        case HORIZONTAL:
+            this->selected_block.top_left_x = 0;
+            this->selected_block.top_left_y = this->getHeight()/pow(2, iteration);
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration-1)-1;
+            break;
+        default:
+            break;
+    }
 }
 
 /**
@@ -307,4 +384,25 @@ float** WorkSpace::getFilterMatrix()
 float** WorkSpace::getSynthesisMatrix()
 {
     return this->synthesis_matrix;
+}
+
+/**
+ * @brief Renvoie le bloc sélectionné dans l'image
+ * @return bloc sélectionné
+ */
+struct block WorkSpace::getSelectedBlock()
+{
+    return this->selected_block;
+}
+
+// Pour les tests
+void WorkSpace::blockTester(float **mat)
+{
+    for(unsigned int j = this->selected_block.top_left_y; j <= this->selected_block.bottom_right_y; j++)
+    {
+        for(unsigned int i = this->selected_block.top_left_x; i <= this->selected_block.bottom_right_x; i++)
+        {
+            mat[i][j] = 0;
+        }
+    }
 }
