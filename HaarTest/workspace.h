@@ -27,7 +27,7 @@ public:
     void saveImage(QImage img, QString fileName);
     void swap();
     void setSelectedBlock(block_choice choice, unsigned int iteration);
-    void blockTester(float** mat); // Pour les tests
+    QImage zoomEditor(struct block zoom_block, float** mat);
 
     QImage getSourceImage();
     QImage getImageFromMatrix(float** mat);

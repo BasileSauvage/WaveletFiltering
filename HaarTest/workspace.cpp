@@ -322,6 +322,83 @@ void WorkSpace::setSelectedBlock(block_choice choice, unsigned int iteration)
             break;
     }
 }
+/**
+ * @brief Va zoomer sur une sous-partie de chaque bloc
+ * @param zoom_block le bloc de l'image initiale sur lequel on veut zoomer
+ * @return l'image calculée
+ */
+QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
+{
+    // Etape 1
+    unsigned int block_height = 1 + zoom_block.bottom_right_y - zoom_block.top_left_y;
+    unsigned int block_width = 1 + zoom_block.bottom_right_x - zoom_block.top_left_x;
+
+    float** result = new float* [this->getWidth()];
+
+    for(unsigned int i = 0; i < this->getWidth(); i++)
+    {
+        result[i] = new float [this->getHeight()];
+    }
+
+    for(unsigned int j = 0; j < this->getHeight(); j++)
+    {
+        for(unsigned int i = 0; i < this->getWidth(); i++)
+        {
+            result[i][j] = 0;
+        }
+    }
+
+    // Etape 2
+    this->setSelectedBlock(LOWRES, this->getNbIteration());
+    for(unsigned int i = 0; i < block_height/pow(2, this->getNbIteration()); i++)
+    {
+        for(unsigned int j = 0; j < block_width/pow(2, this->getNbIteration()); j++)
+        {
+            result[i][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, this->getNbIteration())][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, this->getNbIteration())];
+        }
+    }
+    // Etape 3
+    for(unsigned int it = this->getNbIteration(); it > 0; it--)
+    {
+        this->setSelectedBlock(DIAGONAL, it);
+        for(unsigned int i = 0; i < block_height/pow(2, it); i++)
+        {
+            for(unsigned int j = 0; j < block_width/pow(2, it); j++)
+            {
+                result[i + block_width/(unsigned int)pow(2, it)][j + block_height/(unsigned int)pow(2, it)] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, it)][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, it)];
+            }
+        }
+
+        this->setSelectedBlock(HORIZONTAL, it);
+        for(unsigned int i = 0; i < block_height/pow(2, it); i++)
+        {
+            for(unsigned int j = 0; j < block_width/pow(2, it); j++)
+            {
+                result[i][j + block_height/(unsigned int)pow(2, it)] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, it)][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, it)];
+            }
+        }
+
+        this->setSelectedBlock(VERTICAL, it);
+        for(unsigned int i = 0; i < block_height/pow(2, it); i++)
+        {
+            for(unsigned int j = 0; j < block_width/pow(2, it); j++)
+            {
+                result[i + block_width/(unsigned int)pow(2, it)][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, it)][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, it)];
+            }
+        }
+    }
+
+    QImage img_result = this->getImageFromMatrix(result);
+
+    for(unsigned int j = 0 ; j < this->getWidth(); j++)
+    {
+        delete result[j];
+    }
+
+    delete result;
+
+    return img_result;
+}
 
 /**
  * @brief Renvoie l'image source
@@ -393,16 +470,4 @@ float** WorkSpace::getSynthesisMatrix()
 struct block WorkSpace::getSelectedBlock()
 {
     return this->selected_block;
-}
-
-// Pour les tests
-void WorkSpace::blockTester(float **mat)
-{
-    for(unsigned int j = this->selected_block.top_left_y; j <= this->selected_block.bottom_right_y; j++)
-    {
-        for(unsigned int i = this->selected_block.top_left_x; i <= this->selected_block.bottom_right_x; i++)
-        {
-            mat[i][j] = 0;
-        }
-    }
 }

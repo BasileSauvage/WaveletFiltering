@@ -14,7 +14,7 @@
 #include <QScrollBar>
 
 
-enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM};
+enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM, SLIDE};
 
 class MainWindow : public QMainWindow
 {
@@ -53,10 +53,10 @@ public:
     QAction* action_haar;
     QAction* action_reverse_haar;
     QAction* action_zero_filter;
-    QAction* action_select_diagonal;
-    QAction* action_select_horizontal;
-    QAction* action_select_vertical;
-    QAction* action_select_lowres;
+    QAction* action_select_diagonal; // provisoire
+    QAction* action_select_horizontal; // provisoire
+    QAction* action_select_vertical; // provisoire
+    QAction* action_select_lowres; // provisoire
 
     int getZoomLevel();
 

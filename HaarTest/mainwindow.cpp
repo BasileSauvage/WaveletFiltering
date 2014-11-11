@@ -80,16 +80,16 @@ void MainWindow::runUI()
 
     this->source_view = new QGraphicsView(this->source_scene,this);
     this->source_view->setMinimumSize(400, 400);
-    this->source_view->setMaximumSize(500, 500);
+    this->source_view->setMaximumSize(426, 426);
     this->haar_view = new QGraphicsView(this->haar_scene,this);
     this->haar_view->setMinimumSize(400, 400);
-    this->haar_view->setMaximumSize(500, 500);
+    this->haar_view->setMaximumSize(426, 426);
     this->filter_view = new QGraphicsView(this->filter_scene,this);
     this->filter_view->setMinimumSize(400, 400);
-    this->filter_view->setMaximumSize(500, 500);
+    this->filter_view->setMaximumSize(426, 426);
     this->synthesis_view = new QGraphicsView(this->synthesis_scene,this);
     this->synthesis_view->setMinimumSize(400, 400);
-    this->synthesis_view->setMaximumSize(500, 500);
+    this->synthesis_view->setMaximumSize(426, 426);
 
     this->zoom_level = 1;
 
@@ -158,6 +158,10 @@ void MainWindow::updateUI(status origin)
             this->filterDisplayer();
             this->synthesisDisplayer();
             break;
+        case SLIDE :
+            this->haarDisplayer();
+            this->filterDisplayer();
+            break;
         default :
             break;
     }
@@ -224,10 +228,28 @@ void MainWindow::haarDisplayer()
     this->action_select_lowres->setEnabled(true);
     this->haar_scene->clear();
 
-    QPixmap haar_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getHaarMatrix())));
-    haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel()); // à changer
-    //haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel()*pow(2, ws->getNbIteration()), ws->getHeight()*this->getZoomLevel()*pow(2, ws->getNbIteration()));
-    this->haar_scene->addPixmap(haar_map);
+    if(this->getZoomLevel() == 1)
+    {
+        QPixmap haar_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getHaarMatrix())));
+        haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
+        //haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel()*pow(2, ws->getNbIteration()), ws->getHeight()*this->getZoomLevel()*pow(2, ws->getNbIteration()));
+        this->haar_scene->addPixmap(haar_map);
+    }
+    else
+    {
+        struct block zoom_block;
+        zoom_block.top_left_x = this->source_view->horizontalScrollBar()->value()/this->getZoomLevel();
+        zoom_block.top_left_y = this->source_view->verticalScrollBar()->value()/this->getZoomLevel();
+        if(zoom_block.top_left_x > ws->getWidth() - 1 - this->source_view->width()/this->getZoomLevel()) zoom_block.top_left_x = ws->getWidth() - 1 - this->source_view->width()/this->getZoomLevel();
+        if(zoom_block.top_left_y > ws->getHeight() - 1 - this->source_view->height()/this->getZoomLevel()) zoom_block.top_left_y = ws->getHeight() - 1 - this->source_view->height()/this->getZoomLevel();
+        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->source_view->width()/this->getZoomLevel())-1;
+        zoom_block.bottom_right_y = (zoom_block.top_left_y + this->source_view->height()/this->getZoomLevel())-1;
+
+        QPixmap haar_map(QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getHaarMatrix())));
+        haar_map = haar_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
+        this->haar_scene->addPixmap(haar_map);
+    }
+
     this->haar_view->setSceneRect(this->haar_scene->itemsBoundingRect());
 }
 
@@ -241,10 +263,28 @@ void MainWindow::filterDisplayer()
     this->action_reverse_haar->setEnabled(true);
     this->filter_scene->clear();
 
-    QPixmap filter_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getFilterMatrix())));
-    filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel()); // à changer
-    //filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel()*pow(2, ws->getNbIteration()), ws->getHeight()*this->getZoomLevel()*pow(2, ws->getNbIteration()));
-    this->filter_scene->addPixmap(filter_map);
+    if(this->getZoomLevel() == 1)
+    {
+        QPixmap filter_map(QPixmap::fromImage(ws->getImageFromMatrix(ws->getFilterMatrix())));
+        filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
+        //filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel()*pow(2, ws->getNbIteration()), ws->getHeight()*this->getZoomLevel()*pow(2, ws->getNbIteration()));
+        this->filter_scene->addPixmap(filter_map);
+    }
+    else
+    {
+        struct block zoom_block;
+        zoom_block.top_left_x = this->source_view->horizontalScrollBar()->value()/this->getZoomLevel();
+        zoom_block.top_left_y = this->source_view->verticalScrollBar()->value()/this->getZoomLevel();
+        if(zoom_block.top_left_x > ws->getWidth() - 1 - this->source_view->width()/this->getZoomLevel()) zoom_block.top_left_x = ws->getWidth() - 1 - this->source_view->width()/this->getZoomLevel();
+        if(zoom_block.top_left_y > ws->getHeight() - 1 - this->source_view->height()/this->getZoomLevel()) zoom_block.top_left_y = ws->getHeight() - 1 - this->source_view->height()/this->getZoomLevel();
+        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->source_view->width()/this->getZoomLevel()) - 1;
+        zoom_block.bottom_right_y = (zoom_block.top_left_y + this->source_view->height()/this->getZoomLevel()) - 1;
+
+        QPixmap filter_map(QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getFilterMatrix())));
+        filter_map = filter_map.scaled(ws->getWidth()*this->getZoomLevel(), ws->getHeight()*this->getZoomLevel());
+        this->filter_scene->addPixmap(filter_map);
+    }
+
     this->filter_view->setSceneRect(this->filter_scene->itemsBoundingRect());
 }
 
@@ -327,6 +367,8 @@ void MainWindow::actionLoad()
         QImage source(fileName);
         WorkSpace::newInstance(source);
         this->updateUI(LOAD);
+        std::cout << "width: " << this->source_view->width() << " height: " << this->source_view->height() << std::endl;
+        std::cout << "position slider: " << this->source_view->horizontalScrollBar()->value() << std::endl;
     }
 }
 
@@ -336,11 +378,10 @@ void MainWindow::actionLoad()
 void MainWindow::actionSave()
 {
     WorkSpace* ws = WorkSpace::getInstance();
-    ws->blockTester(ws->getHaarMatrix());
     //ws->saveImage(ws->getSourceImage(), "test.jpg");
-    ws->saveImage(ws->getImageFromMatrix(ws->getHaarMatrix()), "haar.jpg");
+    //ws->saveImage(ws->getImageFromMatrix(ws->getHaarMatrix()), "haar.jpg");
     //ws->saveImage(ws->getImageFromMatrix(ws->getFilterMatrix()), "filter.jpg");
-    //ws->saveImage(ws->getImageFromMatrix(ws->getSynthesisMatrix()), "synthesis.jpg");
+    ws->saveImage(ws->getImageFromMatrix(ws->getSynthesisMatrix()), "synthesis.jpg");
 }
 
 /**
@@ -470,9 +511,16 @@ void MainWindow::actionSelectLowresBlock()
 void MainWindow::updateHScrollBar(int val)
 {
     this->source_view->horizontalScrollBar()->setValue(val);
-    this->haar_view->horizontalScrollBar()->setValue(val);
-    this->filter_view->horizontalScrollBar()->setValue(val);
     this->synthesis_view->horizontalScrollBar()->setValue(val);
+    if(this->getZoomLevel() > 1)
+    {
+        this->updateUI(SLIDE);
+    }
+    else
+    {
+        this->haar_view->horizontalScrollBar()->setValue(val);
+        this->filter_view->horizontalScrollBar()->setValue(val);
+    }
 }
 
 /**
@@ -481,9 +529,16 @@ void MainWindow::updateHScrollBar(int val)
 void MainWindow::updateVScrollBar(int val)
 {
     this->source_view->verticalScrollBar()->setValue(val);
-    this->haar_view->verticalScrollBar()->setValue(val);
-    this->filter_view->verticalScrollBar()->setValue(val);
     this->synthesis_view->verticalScrollBar()->setValue(val);
+    if(this->getZoomLevel() > 1)
+    {
+        this->updateUI(SLIDE);
+    }
+    else
+    {
+        this->haar_view->verticalScrollBar()->setValue(val);
+        this->filter_view->verticalScrollBar()->setValue(val);
+    }
 }
 
 /**
