@@ -26,17 +26,16 @@ public:
     QMenuBar* menu;
     QMenu* menu_file;
     QMenu* menu_transform;
-    QMenu* menu_select;
 
-    QGraphicsView* source_view;
-    QGraphicsView* haar_view;
-    QGraphicsView* filter_view;
-    QGraphicsView* synthesis_view;
+    QGraphicsView* input_fine_view;
+    QGraphicsView* input_DWT_view;
+    QGraphicsView* output_DWT_view;
+    QGraphicsView* output_fine_view;
 
-    QGraphicsScene* source_scene;
-    QGraphicsScene* haar_scene;
-    QGraphicsScene* filter_scene;
-    QGraphicsScene* synthesis_scene;
+    QGraphicsScene* input_fine_scene;
+    QGraphicsScene* input_DWT_scene;
+    QGraphicsScene* output_DWT_scene;
+    QGraphicsScene* output_fine_scene;
 
     QWidget* main_widget;
 
@@ -48,15 +47,10 @@ public:
 
     QAction* action_load;
     QAction* action_save;
+    QAction* action_save_all;
     QAction* action_swap;
     QAction* action_quit;
-    QAction* action_haar;
-    QAction* action_reverse_haar;
     QAction* action_zero_filter;
-    QAction* action_select_diagonal; // provisoire
-    QAction* action_select_horizontal; // provisoire
-    QAction* action_select_vertical; // provisoire
-    QAction* action_select_lowres; // provisoire
 
     int getZoomLevel();
 
@@ -66,10 +60,10 @@ private:
     void runUI();
     void updateUI(status origin);
     void resetUI();
-    void sourceDisplayer();
-    void haarDisplayer();
-    void filterDisplayer();
-    void synthesisDisplayer();
+    void inputFineDisplayer();
+    void inputDWTDisplayer();
+    void outputDWTDisplayer();
+    void outputFineDisplayer();
     void connectActions();
 
 public slots:
@@ -77,16 +71,13 @@ public slots:
     void analysisModifier(int val);
     void actionLoad();
     void actionSave();
+    void actionSaveAll();
     void actionSwap();
-    void actionHaar();
-    void actionReverseHaar();
     void actionZeroFilter();
-    void actionSelectDiagonalBlock();
-    void actionSelectHorizontalBlock();
-    void actionSelectVerticalBlock();
-    void actionSelectLowresBlock();
     void updateHScrollBar(int val);
     void updateVScrollBar(int val);
+    void updateZoomedHScrollBar(int val);
+    void updateZoomedVScrollBar(int val);
 };
 
 #endif // MAINWINDOW_H

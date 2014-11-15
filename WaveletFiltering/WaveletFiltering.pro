@@ -7,7 +7,7 @@
 QT       += core gui
 QT       += widgets
 
-TARGET = HaarTest
+TARGET = WaveletFiltering
 TEMPLATE = app
 
 SOURCES += main.cpp \

@@ -8,11 +8,12 @@
 WorkSpace::WorkSpace(QImage img)
 {
     this->source = img.convertToFormat(QImage::Format_ARGB32);
-    this->nb_iteration = 0;
+    this->current_analysis_level = 0;
 
-    this->haar_matrix = new float* [img.width()];
-    this->filter_matrix = new float* [img.width()];
-    this->synthesis_matrix = new float* [img.width()];
+    this->input_fine_matrix = new float* [img.width()];
+    this->input_DWT_matrix = new float* [img.width()];
+    this->output_DWT_matrix = new float* [img.width()];
+    this->output_fine_matrix = new float* [img.width()];
 
     this->selected_block.top_left_x = 0;
     this->selected_block.top_left_y = 0;
@@ -21,18 +22,20 @@ WorkSpace::WorkSpace(QImage img)
 
     for(int i = 0; i < img.width(); i++)
     {
-        haar_matrix[i] = new float [img.height()];
-        filter_matrix[i] = new float [img.height()];
-        synthesis_matrix[i] = new float [img.height()];
+        input_fine_matrix[i] = new float [img.height()];
+        input_DWT_matrix[i] = new float [img.height()];
+        output_DWT_matrix[i] = new float [img.height()];
+        output_fine_matrix[i] = new float [img.height()];
     }
 
     for(int j = 0; j < img.height(); j++)
     {
         for(int i = 0; i < img.width(); i++)
         {
-            haar_matrix[i][j] = 0;
-            filter_matrix[i][j] = 0;
-            synthesis_matrix[i][j] = 0;
+            input_fine_matrix[i][j] = qGray(img.pixel(i,j));
+            input_DWT_matrix[i][j] = qGray(img.pixel(i,j));
+            output_DWT_matrix[i][j] = 0;
+            output_fine_matrix[i][j] = 0;
         }
     }
 }
@@ -44,14 +47,16 @@ WorkSpace::~WorkSpace()
 {
     for(unsigned int j = 0 ; j < this->getWidth() ; j++)
     {
-        delete haar_matrix[j];
-        delete filter_matrix[j];
-        delete synthesis_matrix[j];
+        delete input_fine_matrix[j];
+        delete input_DWT_matrix[j];
+        delete output_DWT_matrix[j];
+        delete output_fine_matrix[j];
     }
 
-    delete haar_matrix;
-    delete filter_matrix;
-    delete synthesis_matrix;
+    delete input_fine_matrix;
+    delete input_DWT_matrix;
+    delete output_DWT_matrix;
+    delete output_fine_matrix;
 
     delete WorkSpace::instance;
 }
@@ -86,41 +91,50 @@ WorkSpace* WorkSpace::getInstance()
 WorkSpace* WorkSpace::instance = 0;
 
 /**
- * @brief Transformation en ondelettes discrète d'une image (base de Haar)
- * @param iteration nombre de fois où l'on souhaite effectuer la transformation
+ * @brief Copie le contenu d'une matrice dans une autre
+ * @param src matrice source
+ * @param dest matrice destination
  */
-void WorkSpace::waveletsTransform(unsigned int iteration)
+void WorkSpace::copyMatrix(float **src, float **dest)
 {
-    this->nb_iteration = iteration;
+    for(unsigned int j = 0; j < this->getHeight(); j++) // On remplit la matrice avec les niveaux de gris de l'image source
+    {
+        for(unsigned int i = 0; i < this->getWidth(); i++)
+        {
+            dest[i][j] = src[i][j];
+        }
+    }
+}
+
+/**
+ * @brief Transformation en ondelettes discrète d'une image (base de Haar)
+ * @param analysis_level nombre de fois où l'on souhaite effectuer la transformation
+ */
+void WorkSpace::waveletsTransform(unsigned int analysis_level)
+{
+    this->current_analysis_level = analysis_level;
 
     unsigned int height = this->getHeight();
     unsigned int width = this->getWidth();
 
-    for(unsigned int j = 0; j < height; j++) // On remplit la matrice avec les niveaux de gris de l'image source
-    {
-        for(unsigned int i = 0; i < width; i++)
-        {
-            //this->haar_matrix[i][j] = this->getSourceImage().pixel(i,j);
-            this->haar_matrix[i][j] = qGray(this->getSourceImage().pixel(i,j));
-            //this->haar_matrix[i][j] = qGray(this->getSourceImage().color(this->getSourceImage().pixelIndex(i,j)));
-        }
-    }
-    for(unsigned int it = 1; it <= iteration; it++, width /= 2, height /= 2)
+    this->copyMatrix(this->getInputFineMatrix(), this->getInputDWTMatrix());
+
+    for(unsigned int it = 1; it <= analysis_level; it++, width /= 2, height /= 2)
     {
         /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-        float vec[(width > height) ? width : height]; // Passer en float
+        float vec[(width > height) ? width : height];
 
         /* Opérations sur les lignes */
         for(unsigned int j = 0; j < height; j++)
         {
             for(unsigned int i = 0; i < width/2 ; i++)
             {
-                vec[i] = (this->haar_matrix[2*i][j] + this->haar_matrix[2*i+1][j])/2;
-                vec[i+width/2] = (this->haar_matrix[2*i][j] - this->haar_matrix[2*i+1][j])/2;
+                vec[i] = (this->input_DWT_matrix[2*i][j] + this->input_DWT_matrix[2*i+1][j])/2.0f;
+                vec[i+width/2] = (this->input_DWT_matrix[2*i][j] - this->input_DWT_matrix[2*i+1][j])/2.0f;
             }
             for(unsigned int i = 0; i < width; i++)
             {
-                this->haar_matrix[i][j] = vec[i];
+                this->input_DWT_matrix[i][j] = vec[i];
             }
         }
 
@@ -129,12 +143,12 @@ void WorkSpace::waveletsTransform(unsigned int iteration)
         {
             for(unsigned int j = 0; j < height/2 ; j++)
             {
-                vec[j] = (this->haar_matrix[i][2*j] + this->haar_matrix[i][2*j+1])/2;
-                vec[j+height/2] = (this->haar_matrix[i][2*j] - this->haar_matrix[i][2*j+1])/2;
+                vec[j] = (this->input_DWT_matrix[i][2*j] + this->input_DWT_matrix[i][2*j+1])/2.0f;
+                vec[j+height/2] = (this->input_DWT_matrix[i][2*j] - this->input_DWT_matrix[i][2*j+1])/2.0f;
             }
             for(unsigned int j = 0; j < height; j++)
             {
-                this->haar_matrix[i][j] = vec[j];
+                this->input_DWT_matrix[i][j] = vec[j];
             }
         }
     }
@@ -144,35 +158,29 @@ void WorkSpace::waveletsTransform(unsigned int iteration)
  * @brief Transformation en ondelettes discrète inverse d'une image
  * @param mat la matrice de coefficients sur laquelle appliquer la transformation
  */
-void WorkSpace::waveletsReverseTransform(float** mat)
+void WorkSpace::waveletsReverseTransform()
 {
-    unsigned int height = this->getHeight()/pow(2, this->getNbIteration()-1);
-    unsigned int width = this->getWidth()/pow(2, this->getNbIteration()-1);
+    unsigned int height = this->getHeight()/pow(2, this->getCurrentAnalysisLevel()-1);
+    unsigned int width = this->getWidth()/pow(2, this->getCurrentAnalysisLevel()-1);
 
-    for(unsigned int i = 0; i < this->getWidth(); i++)
-    {
-        for(unsigned int j = 0; j < this->getHeight(); j++)
-        {
-            synthesis_matrix[i][j] = mat[i][j];
-        }
-    }
+    this->copyMatrix(this->getOutputDWTMatrix(), this->getOutputFineMatrix());
 
-    for(unsigned int it = this->getNbIteration(); it >= 1; it--, width *= 2, height *= 2)
+    for(unsigned int it = this->getCurrentAnalysisLevel(); it >= 1; it--, width *= 2, height *= 2)
     {
         /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-        float vec[(width > height) ? width : height]; // Passer en float
+        float vec[(width > height) ? width : height];
 
         /* Opérations sur les colonnes */
         for(unsigned int i = 0; i < width; i++)
         {
             for(unsigned int j = 0; j < height/2 ; j++)
             {
-                vec[2*j] = this->synthesis_matrix[i][j] + this->synthesis_matrix[i][j+height/2];
-                vec[2*j+1] = this->synthesis_matrix[i][j] - this->synthesis_matrix[i][j+height/2];
+                vec[2*j] = this->output_fine_matrix[i][j] + this->output_fine_matrix[i][j+height/2];
+                vec[2*j+1] = this->output_fine_matrix[i][j] - this->output_fine_matrix[i][j+height/2];
             }
             for(unsigned int j = 0; j < height; j++)
             {
-                this->synthesis_matrix[i][j] = vec[j];
+                this->output_fine_matrix[i][j] = vec[j];
             }
         }
 
@@ -181,12 +189,12 @@ void WorkSpace::waveletsReverseTransform(float** mat)
         {
             for(unsigned int i = 0; i < width/2 ; i++)
             {
-                vec[2*i] = this->synthesis_matrix[i][j] + this->synthesis_matrix[i+width/2][j];
-                vec[2*i+1] = this->synthesis_matrix[i][j] - this->synthesis_matrix[i+width/2][j];
+                vec[2*i] = this->output_fine_matrix[i][j] + this->output_fine_matrix[i+width/2][j];
+                vec[2*i+1] = this->output_fine_matrix[i][j] - this->output_fine_matrix[i+width/2][j];
             }
             for(unsigned int i = 0; i < width; i++)
             {
-                this->synthesis_matrix[i][j] = vec[i];
+                this->output_fine_matrix[i][j] = vec[i];
             }
         }
     }
@@ -196,28 +204,32 @@ void WorkSpace::waveletsReverseTransform(float** mat)
  * @brief Transforme une matrice de coefficients en remplaçant ceux générés lors du dernier niveau d'analyse par 0
  * @param mat la matrice de coefficients sur laquelle appliquer la transformation
  */
-void WorkSpace::zeroFilter(float** mat)
+void WorkSpace::zeroFilter()
 {
-    for(unsigned int i = 0; i < this->getWidth(); i++)
+    this->copyMatrix(this->getInputDWTMatrix(), this->getOutputDWTMatrix());
+
+    this->setSelectedBlock(DIAGONAL, this->getCurrentAnalysisLevel());
+    for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
     {
-        for(unsigned int j = 0; j < this->getHeight(); j++)
+        for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
         {
-            filter_matrix[i][j] = mat[i][j];
+            this->output_DWT_matrix[i][j] = 0;
         }
     }
-
-    for(unsigned int i = 0; i < this->getWidth()/pow(2, this->getNbIteration()-1); i++)
+    this->setSelectedBlock(HORIZONTAL, this->getCurrentAnalysisLevel());
+    for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
     {
-        for(unsigned int j = 0; j < this->getHeight()/pow(2, this->getNbIteration()-1); j++)
+        for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
         {
-            if(i < this->getWidth()/pow(2, this->getNbIteration()) && j < this->getHeight()/pow(2, this->getNbIteration()))
-            {
-                continue;
-            }
-            else
-            {
-                filter_matrix[i][j] = 0;
-            }
+            this->output_DWT_matrix[i][j] = 0;
+        }
+    }
+    this->setSelectedBlock(VERTICAL, this->getCurrentAnalysisLevel());
+    for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
+    {
+        for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
+        {
+            this->output_DWT_matrix[i][j] = 0;
         }
     }
 }
@@ -248,10 +260,41 @@ QImage WorkSpace::getImageFromMatrix(float** mat)
             {
                 img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
             }
-            else if(mat[i][j] > 255)
+            /*else if(mat[i][j] > 255)
             {
                 img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
+            }*/
+            else
+            {
+                img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
             }
+    }
+
+    return img;
+}
+
+/**
+ * @brief Fonction surchargée
+ * @param mat la matrice de coefficients à convertir en image
+ * @param mat_width la largeur de la future image
+ * @param mat_height la hauteur de la future image
+ * @return matrice convertie
+ */
+QImage WorkSpace::getImageFromMatrix(float** mat, unsigned int mat_width, unsigned int mat_height)
+{
+    QImage img(mat_width, mat_height, QImage::Format_ARGB32);
+
+    for(unsigned int j = 0; j < mat_height; j++)
+    {
+        for(unsigned int i = 0; i < mat_width; i++)
+            if(mat[i][j] < 0)
+            {
+                img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
+            }
+            /*else if(mat[i][j] > 255)
+            {
+                img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
+            }*/
             else
             {
                 img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
@@ -266,18 +309,19 @@ QImage WorkSpace::getImageFromMatrix(float** mat)
  */
 void WorkSpace::swap()
 {
-    this->source = this->getImageFromMatrix(this->synthesis_matrix);
     for(unsigned int i = 0; i < this->getWidth(); i++)
     {
         for(unsigned int j = 0; j < this->getHeight(); j++)
         {
-            haar_matrix[i][j] = 0;
-            filter_matrix[i][j] = 0;
-            synthesis_matrix[i][j] = 0;
+            input_fine_matrix[i][j] = output_fine_matrix[i][j];
+            input_DWT_matrix[i][j] = output_fine_matrix[i][j];
+            output_DWT_matrix[i][j] = 0;
+            output_fine_matrix[i][j] = 0;
         }
     }
+    this->source = this->getImageFromMatrix(this->input_fine_matrix);
 
-    this->nb_iteration = 0;
+    this->current_analysis_level = 0;
 
     this->selected_block.top_left_x = 0;
     this->selected_block.top_left_y = 0;
@@ -288,35 +332,35 @@ void WorkSpace::swap()
 /**
  * @brief Remplit la structure contenant le bloc sélectionné
  * @param choice le bloc désiré
- * @param iteration le niveau d'analyse désiré
+ * @param analysis_level le niveau d'analyse désiré
  */
-void WorkSpace::setSelectedBlock(block_choice choice, unsigned int iteration)
+void WorkSpace::setSelectedBlock(block_choice choice, unsigned int analysis_level)
 {
     switch(choice)
     {
         case LOWRES:
             this->selected_block.top_left_x = 0;
             this->selected_block.top_left_y = 0;
-            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration)-1;
-            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration)-1;
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, analysis_level)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, analysis_level)-1;
             break;
         case DIAGONAL:
-            this->selected_block.top_left_x = this->getWidth()/pow(2, iteration);
-            this->selected_block.top_left_y = this->getHeight()/pow(2, iteration);
-            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration-1)-1;
-            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration-1)-1;
+            this->selected_block.top_left_x = this->getWidth()/pow(2, analysis_level);
+            this->selected_block.top_left_y = this->getHeight()/pow(2, analysis_level);
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, analysis_level-1)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, analysis_level-1)-1;
             break;
         case VERTICAL:
-            this->selected_block.top_left_x = this->getWidth()/pow(2, iteration);
+            this->selected_block.top_left_x = this->getWidth()/pow(2, analysis_level);
             this->selected_block.top_left_y = 0;
-            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration-1)-1;
-            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration)-1;
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, analysis_level-1)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, analysis_level)-1;
             break;
         case HORIZONTAL:
             this->selected_block.top_left_x = 0;
-            this->selected_block.top_left_y = this->getHeight()/pow(2, iteration);
-            this->selected_block.bottom_right_x = this->getWidth()/pow(2, iteration)-1;
-            this->selected_block.bottom_right_y = this->getHeight()/pow(2, iteration-1)-1;
+            this->selected_block.top_left_y = this->getHeight()/pow(2, analysis_level);
+            this->selected_block.bottom_right_x = this->getWidth()/pow(2, analysis_level)-1;
+            this->selected_block.bottom_right_y = this->getHeight()/pow(2, analysis_level-1)-1;
             break;
         default:
             break;
@@ -333,32 +377,24 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
     unsigned int block_height = 1 + zoom_block.bottom_right_y - zoom_block.top_left_y;
     unsigned int block_width = 1 + zoom_block.bottom_right_x - zoom_block.top_left_x;
 
-    float** result = new float* [this->getWidth()];
+    float** result = new float* [block_width];
 
-    for(unsigned int i = 0; i < this->getWidth(); i++)
+    for(unsigned int i = 0; i < block_width; i++)
     {
-        result[i] = new float [this->getHeight()];
-    }
-
-    for(unsigned int j = 0; j < this->getHeight(); j++)
-    {
-        for(unsigned int i = 0; i < this->getWidth(); i++)
-        {
-            result[i][j] = 0;
-        }
+        result[i] = new float [block_height];
     }
 
     // Etape 2
-    this->setSelectedBlock(LOWRES, this->getNbIteration());
-    for(unsigned int i = 0; i < block_height/pow(2, this->getNbIteration()); i++)
+    this->setSelectedBlock(LOWRES, this->getCurrentAnalysisLevel());
+    for(unsigned int i = 0; i < block_height/pow(2, this->getCurrentAnalysisLevel()); i++)
     {
-        for(unsigned int j = 0; j < block_width/pow(2, this->getNbIteration()); j++)
+        for(unsigned int j = 0; j < block_width/pow(2, this->getCurrentAnalysisLevel()); j++)
         {
-            result[i][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, this->getNbIteration())][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, this->getNbIteration())];
+            result[i][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, this->getCurrentAnalysisLevel())][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, this->getCurrentAnalysisLevel())];
         }
     }
     // Etape 3
-    for(unsigned int it = this->getNbIteration(); it > 0; it--)
+    for(unsigned int it = this->getCurrentAnalysisLevel(); it > 0; it--)
     {
         this->setSelectedBlock(DIAGONAL, it);
         for(unsigned int i = 0; i < block_height/pow(2, it); i++)
@@ -388,9 +424,9 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
         }
     }
 
-    QImage img_result = this->getImageFromMatrix(result);
+    QImage img_result = this->getImageFromMatrix(result, block_width, block_height);
 
-    for(unsigned int j = 0 ; j < this->getWidth(); j++)
+    for(unsigned int j = 0; j < block_width; j++) //for(unsigned int j = 0 ; j < this->getWidth(); j++)
     {
         delete result[j];
     }
@@ -431,36 +467,45 @@ unsigned int WorkSpace::getHeight()
  * @brief Renvoie le niveau d'analyse actuel
  * @return nombre de fois où on a appliqué la transformation en ondelettes discrète
  */
-unsigned int WorkSpace::getNbIteration()
+unsigned int WorkSpace::getCurrentAnalysisLevel()
 {
-    return this->nb_iteration;
+    return this->current_analysis_level;
+}
+
+/**
+ * @brief Renvoie la matrice de coefficients de l'image de départ
+ * @return matrice de coefficients initiale
+ */
+float** WorkSpace::getInputFineMatrix()
+{
+    return this->input_fine_matrix;
 }
 
 /**
  * @brief Renvoie la matrice de coefficients d'ondelettes
  * @return matrice de coefficients de Haar
  */
-float** WorkSpace::getHaarMatrix()
+float** WorkSpace::getInputDWTMatrix()
 {
-    return this->haar_matrix;
+    return this->input_DWT_matrix;
 }
 
 /**
  * @brief Renvoie la matrice résultant de l'application d'un filtre
  * @return matrice de coefficients après application d'un filtre
  */
-float** WorkSpace::getFilterMatrix()
+float** WorkSpace::getOutputDWTMatrix()
 {
-    return this->filter_matrix;
+    return this->output_DWT_matrix;
 }
 
 /**
  * @brief Renvoie la matrice de coefficients après transformation en ondelettes inverse
  * @return matrice de coefficients après synthèse
  */
-float** WorkSpace::getSynthesisMatrix()
+float** WorkSpace::getOutputFineMatrix()
 {
-    return this->synthesis_matrix;
+    return this->output_fine_matrix;
 }
 
 /**
