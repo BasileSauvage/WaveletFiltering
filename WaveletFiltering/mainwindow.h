@@ -7,6 +7,8 @@
 #include <QGraphicsScene>
 #include <QMenuBar>
 #include <QMenu>
+#include <QCheckBox>
+#include <QSpinBox>
 #include <QSlider>
 #include <QLabel>
 #include <QAction>
@@ -14,7 +16,7 @@
 #include <QScrollBar>
 
 
-enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM, SLIDE};
+enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM, SCROLL};
 
 class MainWindow : public QMainWindow
 {
@@ -39,11 +41,16 @@ public:
 
     QWidget* main_widget;
 
-    QSlider* wavelets_slider;
-    QSlider* zoom_slider;
+    QCheckBox* synchro_checkbox;
+
+    QSpinBox* wavelets_spinbox;
+
+    QSlider* zoom_left_slider;
+    QSlider* zoom_right_slider;
 
     QLabel* wavelets_label;
-    QLabel* zoom_label;
+    QLabel* zoom_left_label;
+    QLabel* zoom_right_label;
 
     QAction* action_load;
     QAction* action_save;
@@ -53,9 +60,11 @@ public:
     QAction* action_zero_filter;
 
     int getZoomLevel();
+    bool isFiltered();
 
 private:
     int zoom_level;
+    bool filtered;
 
     void runUI();
     void updateUI(status origin);

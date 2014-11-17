@@ -17,13 +17,13 @@ class WorkSpace
 {
 
 public:
-    WorkSpace(QImage img);
-    ~WorkSpace();
     static void newInstance(QImage img);
     static WorkSpace* getInstance();
     void copyMatrix(float** src, float** dest);
-    void waveletsTransform(unsigned int analysis_level);
-    void waveletsReverseTransform();
+    void waveletTransform(bool apply_to_output, unsigned int target_level);
+    void waveletAnalysis(float** mat, unsigned int width, unsigned int height);
+    void waveletSynthesis(float** mat, unsigned int width, unsigned int height);
+    void updateOutputFineFromDWT();
     void zeroFilter();
     void saveImage(QImage img, QString fileName);
     void swap();
@@ -43,6 +43,8 @@ public:
     struct block getSelectedBlock();
 
 private:
+    WorkSpace(QImage img); // constructeur privé à cause du singleton
+    ~WorkSpace();
     QImage source;
     unsigned int current_analysis_level;
     float** input_fine_matrix;

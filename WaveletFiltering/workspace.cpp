@@ -107,95 +107,106 @@ void WorkSpace::copyMatrix(float **src, float **dest)
 }
 
 /**
- * @brief Transformation en ondelettes discrète d'une image (base de Haar)
- * @param analysis_level nombre de fois où l'on souhaite effectuer la transformation
+ * @brief Applique une transformée en ondelettes ou son inverse
+ * @param apply_to_output le booléen indiquant si on modifie également output_DWT_matrix ou non
+ * @param target_level le niveau d'analyse à atteindre
  */
-void WorkSpace::waveletsTransform(unsigned int analysis_level)
+void WorkSpace::waveletTransform(bool apply_to_output, unsigned int target_level)
 {
-    this->current_analysis_level = analysis_level;
-
-    unsigned int height = this->getHeight();
-    unsigned int width = this->getWidth();
-
-    this->copyMatrix(this->getInputFineMatrix(), this->getInputDWTMatrix());
-
-    for(unsigned int it = 1; it <= analysis_level; it++, width /= 2, height /= 2)
+    if(this->current_analysis_level < target_level)
     {
-        /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-        float vec[(width > height) ? width : height];
+        unsigned int height = this->getHeight()/pow(2, current_analysis_level);
+        unsigned int width = this->getWidth()/pow(2, current_analysis_level);
+        this->waveletAnalysis(this->getInputDWTMatrix(), width, height);
+        if(apply_to_output) this->waveletAnalysis(this->getOutputDWTMatrix(), width, height);
+    }
+    else
+    {
+        unsigned int height = this->getHeight()/pow(2, target_level);
+        unsigned int width = this->getWidth()/pow(2, target_level);
+        this->waveletSynthesis(this->getInputDWTMatrix(), width, height);
+        if(apply_to_output) this->waveletSynthesis(this->getOutputDWTMatrix(), width, height);
+    }
 
-        /* Opérations sur les lignes */
-        for(unsigned int j = 0; j < height; j++)
+    this->current_analysis_level = target_level;
+}
+
+/**
+ * @brief Applique un niveau d'analyse (DWT) sur une matrice donnée
+ * @param mat la matrice de coefficients sur laquelle appliquer la transformation
+ * @param width le nombre de colonnes à traiter
+ * @param height le nombre de lignes à traiter
+ */
+void WorkSpace::waveletAnalysis(float **mat, unsigned int width, unsigned int height)
+{
+    /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
+    float vec[(width > height) ? width : height];
+
+    /* Opérations sur les lignes */
+    for(unsigned int j = 0; j < height; j++)
+    {
+        for(unsigned int i = 0; i < width/2 ; i++)
         {
-            for(unsigned int i = 0; i < width/2 ; i++)
-            {
-                vec[i] = (this->input_DWT_matrix[2*i][j] + this->input_DWT_matrix[2*i+1][j])/2.0f;
-                vec[i+width/2] = (this->input_DWT_matrix[2*i][j] - this->input_DWT_matrix[2*i+1][j])/2.0f;
-            }
-            for(unsigned int i = 0; i < width; i++)
-            {
-                this->input_DWT_matrix[i][j] = vec[i];
-            }
+            vec[i] = (mat[2*i][j] + mat[2*i+1][j])/2.0f;
+            vec[i+width/2] = (mat[2*i][j] - mat[2*i+1][j])/2.0f;
         }
-
-        /* Opérations sur les colonnes */
         for(unsigned int i = 0; i < width; i++)
         {
-            for(unsigned int j = 0; j < height/2 ; j++)
-            {
-                vec[j] = (this->input_DWT_matrix[i][2*j] + this->input_DWT_matrix[i][2*j+1])/2.0f;
-                vec[j+height/2] = (this->input_DWT_matrix[i][2*j] - this->input_DWT_matrix[i][2*j+1])/2.0f;
-            }
-            for(unsigned int j = 0; j < height; j++)
-            {
-                this->input_DWT_matrix[i][j] = vec[j];
-            }
+            mat[i][j] = vec[i];
+        }
+    }
+
+    /* Opérations sur les colonnes */
+    for(unsigned int i = 0; i < width; i++)
+    {
+        for(unsigned int j = 0; j < height/2 ; j++)
+        {
+            vec[j] = (mat[i][2*j] + mat[i][2*j+1])/2.0f;
+            vec[j+height/2] = (mat[i][2*j] - mat[i][2*j+1])/2.0f;
+        }
+        for(unsigned int j = 0; j < height; j++)
+        {
+            mat[i][j] = vec[j];
         }
     }
 }
 
 /**
- * @brief Transformation en ondelettes discrète inverse d'une image
+ * @brief Applique un niveau de synthèse (DWT inverse) sur une matrice donnée
  * @param mat la matrice de coefficients sur laquelle appliquer la transformation
+ * @param width le nombre de colonnes à traiter
+ * @param height le nombre de lignes à traiter
  */
-void WorkSpace::waveletsReverseTransform()
+void WorkSpace::waveletSynthesis(float **mat, unsigned int width, unsigned int height)
 {
-    unsigned int height = this->getHeight()/pow(2, this->getCurrentAnalysisLevel()-1);
-    unsigned int width = this->getWidth()/pow(2, this->getCurrentAnalysisLevel()-1);
+    /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
+    float vec[(width > height) ? width : height];
 
-    this->copyMatrix(this->getOutputDWTMatrix(), this->getOutputFineMatrix());
-
-    for(unsigned int it = this->getCurrentAnalysisLevel(); it >= 1; it--, width *= 2, height *= 2)
+    /* Opérations sur les colonnes */
+    for(unsigned int i = 0; i < width; i++)
     {
-        /* Le vecteur de calcul aura la taille de la plus grande valeur entre width et height pour éviter d'allouer 2 vecteurs */
-        float vec[(width > height) ? width : height];
-
-        /* Opérations sur les colonnes */
-        for(unsigned int i = 0; i < width; i++)
+        for(unsigned int j = 0; j < height/2 ; j++)
         {
-            for(unsigned int j = 0; j < height/2 ; j++)
-            {
-                vec[2*j] = this->output_fine_matrix[i][j] + this->output_fine_matrix[i][j+height/2];
-                vec[2*j+1] = this->output_fine_matrix[i][j] - this->output_fine_matrix[i][j+height/2];
-            }
-            for(unsigned int j = 0; j < height; j++)
-            {
-                this->output_fine_matrix[i][j] = vec[j];
-            }
+            vec[2*j] = mat[i][j] + mat[i][j+height/2];
+            vec[2*j+1] = mat[i][j] - mat[i][j+height/2];
         }
-
-        /* Opérations sur les lignes */
         for(unsigned int j = 0; j < height; j++)
         {
-            for(unsigned int i = 0; i < width/2 ; i++)
-            {
-                vec[2*i] = this->output_fine_matrix[i][j] + this->output_fine_matrix[i+width/2][j];
-                vec[2*i+1] = this->output_fine_matrix[i][j] - this->output_fine_matrix[i+width/2][j];
-            }
-            for(unsigned int i = 0; i < width; i++)
-            {
-                this->output_fine_matrix[i][j] = vec[i];
-            }
+            mat[i][j] = vec[j];
+        }
+    }
+
+    /* Opérations sur les lignes */
+    for(unsigned int j = 0; j < height; j++)
+    {
+        for(unsigned int i = 0; i < width/2 ; i++)
+        {
+            vec[2*i] = mat[i][j] + mat[i+width/2][j];
+            vec[2*i+1] = mat[i][j] - mat[i+width/2][j];
+        }
+        for(unsigned int i = 0; i < width; i++)
+        {
+            mat[i][j] = vec[i];
         }
     }
 }
@@ -231,6 +242,22 @@ void WorkSpace::zeroFilter()
         {
             this->output_DWT_matrix[i][j] = 0;
         }
+    }
+}
+
+/**
+ * @brief Génère l'image synthèse (output_fine_matrix)
+ */
+void WorkSpace::updateOutputFineFromDWT()
+{
+    this->copyMatrix(this->getOutputDWTMatrix(), this->getOutputFineMatrix());
+
+    unsigned int height = this->getHeight()/pow(2, this->getCurrentAnalysisLevel()-1);
+    unsigned int width = this->getWidth()/pow(2, this->getCurrentAnalysisLevel()-1);
+
+    for(int lvl = this->getCurrentAnalysisLevel(); lvl >= 1; lvl--, height*=2, width*=2)
+    {
+        this->waveletSynthesis(this->getOutputFineMatrix(), width, height);
     }
 }
 
