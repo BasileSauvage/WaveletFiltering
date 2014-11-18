@@ -114,18 +114,24 @@ void WorkSpace::copyMatrix(float **src, float **dest)
 void WorkSpace::waveletTransform(bool apply_to_output, unsigned int target_level)
 {
     if(this->current_analysis_level < target_level)
-    {
+    {        
         unsigned int height = this->getHeight()/pow(2, current_analysis_level);
         unsigned int width = this->getWidth()/pow(2, current_analysis_level);
-        this->waveletAnalysis(this->getInputDWTMatrix(), width, height);
-        if(apply_to_output) this->waveletAnalysis(this->getOutputDWTMatrix(), width, height);
+        for(unsigned int lvl = current_analysis_level; lvl < target_level; lvl++, height/=2, width/=2)
+        {
+            this->waveletAnalysis(this->getInputDWTMatrix(), width, height);
+            if(apply_to_output) this->waveletAnalysis(this->getOutputDWTMatrix(), width, height);
+        }
     }
     else
     {
-        unsigned int height = this->getHeight()/pow(2, target_level);
-        unsigned int width = this->getWidth()/pow(2, target_level);
-        this->waveletSynthesis(this->getInputDWTMatrix(), width, height);
-        if(apply_to_output) this->waveletSynthesis(this->getOutputDWTMatrix(), width, height);
+        unsigned int height = this->getHeight()/pow(2, current_analysis_level - 1);
+        unsigned int width = this->getWidth()/pow(2, current_analysis_level - 1);
+        for(unsigned int lvl = target_level; lvl < current_analysis_level; lvl++, height*=2, width*=2)
+        {
+            this->waveletSynthesis(this->getInputDWTMatrix(), width, height);
+            if(apply_to_output) this->waveletSynthesis(this->getOutputDWTMatrix(), width, height);
+        }
     }
 
     this->current_analysis_level = target_level;
@@ -217,8 +223,6 @@ void WorkSpace::waveletSynthesis(float **mat, unsigned int width, unsigned int h
  */
 void WorkSpace::zeroFilter()
 {
-    this->copyMatrix(this->getInputDWTMatrix(), this->getOutputDWTMatrix());
-
     this->setSelectedBlock(DIAGONAL, this->getCurrentAnalysisLevel());
     for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
     {
@@ -287,10 +291,6 @@ QImage WorkSpace::getImageFromMatrix(float** mat)
             {
                 img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
             }
-            /*else if(mat[i][j] > 255)
-            {
-                img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
-            }*/
             else
             {
                 img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
@@ -318,10 +318,6 @@ QImage WorkSpace::getImageFromMatrix(float** mat, unsigned int mat_width, unsign
             {
                 img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
             }
-            /*else if(mat[i][j] > 255)
-            {
-                img.setPixel(i, j, qRgb(mat[i][j]-255, mat[i][j]-255, mat[i][j]-255));
-            }*/
             else
             {
                 img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
@@ -420,6 +416,7 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
             result[i][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, this->getCurrentAnalysisLevel())][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, this->getCurrentAnalysisLevel())];
         }
     }
+
     // Etape 3
     for(unsigned int it = this->getCurrentAnalysisLevel(); it > 0; it--)
     {
@@ -453,7 +450,7 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
 
     QImage img_result = this->getImageFromMatrix(result, block_width, block_height);
 
-    for(unsigned int j = 0; j < block_width; j++) //for(unsigned int j = 0 ; j < this->getWidth(); j++)
+    for(unsigned int j = 0; j < block_width; j++)
     {
         delete result[j];
     }

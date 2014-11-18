@@ -66,51 +66,30 @@ void MainWindow::runUI()
     this->output_fine_scene = new QGraphicsScene(this);
 
     this->input_fine_view = new QGraphicsView(this->input_fine_scene,this);
-    this->input_fine_view->setMinimumSize(400, 400);
-    this->input_fine_view->setMaximumSize(426, 426);
+    this->input_fine_view->setFixedSize(512, 512);
     this->input_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
     this->input_DWT_view = new QGraphicsView(this->input_DWT_scene,this);
-    this->input_DWT_view->setMinimumSize(400, 400);
-    this->input_DWT_view->setMaximumSize(426, 426);
+    this->input_DWT_view->setFixedSize(512, 512);
     this->input_DWT_view->setDragMode(QGraphicsView::ScrollHandDrag);
     this->output_DWT_view = new QGraphicsView(this->output_DWT_scene,this);
-    this->output_DWT_view->setMinimumSize(400, 400);
-    this->output_DWT_view->setMaximumSize(426, 426);
+    this->output_DWT_view->setFixedSize(512, 512);
     this->output_DWT_view->setDragMode(QGraphicsView::ScrollHandDrag);
     this->output_fine_view = new QGraphicsView(this->output_fine_scene,this);
-    this->output_fine_view->setMinimumSize(400, 400);
-    this->output_fine_view->setMaximumSize(426, 426);
+    this->output_fine_view->setFixedSize(512, 512);
     this->output_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
 
     this->filtered = false;
 
     this->zoom_level = 0;
 
-    this->zoom_left_label = new QLabel(this);
-    this->zoom_left_label->setText("Zoom x " + QString::number(this->getZoomLevel()));
+    this->zoom_label = new QLabel(this);
+    this->zoom_label->setText("Zoom x " + QString::number(this->getZoomLevel()));
 
-    this->zoom_right_label = new QLabel(this);
-    this->zoom_right_label->setText("Zoom x " + QString::number(this->getZoomLevel()));
-
-    this->zoom_left_slider = new QSlider(Qt::Vertical, this);
-    this->zoom_left_slider->setRange(-3, 9);
-    this->zoom_left_slider->setValue(this->getZoomLevel());
-    this->zoom_left_slider->setTickInterval(1);
-    this->zoom_left_slider->setEnabled(false);
-
-    this->zoom_right_slider = new QSlider(Qt::Vertical, this);
-    this->zoom_right_slider->setRange(-3, 9);
-    this->zoom_right_slider->setValue(this->getZoomLevel());
-    this->zoom_right_slider->setTickInterval(1);
-    this->zoom_right_slider->setEnabled(false);
-
-    QVBoxLayout *zoom_left_layout = new QVBoxLayout();
-    zoom_left_layout->addWidget(this->zoom_left_slider, 1);
-    zoom_left_layout->addWidget(this->zoom_left_label, 0);
-
-    QVBoxLayout *zoom_right_layout = new QVBoxLayout();
-    zoom_right_layout->addWidget(this->zoom_right_slider, 1);
-    zoom_right_layout->addWidget(this->zoom_right_label, 0);
+    this->zoom_slider = new QSlider(Qt::Vertical, this);
+    this->zoom_slider->setRange(-3, 9);
+    this->zoom_slider->setValue(this->getZoomLevel());
+    this->zoom_slider->setTickInterval(1);
+    this->zoom_slider->setEnabled(false);
 
     this->wavelets_label = new QLabel(this);
     this->wavelets_label->setText("Nv analyse");
@@ -118,23 +97,24 @@ void MainWindow::runUI()
     this->wavelets_spinbox = new QSpinBox(this);
     this->wavelets_spinbox->setEnabled(false);
 
-    this->synchro_checkbox = new QCheckBox("Désynchroniser vues", this);
+    this->synchro_checkbox = new QCheckBox("Synchroniser vues", this);
 
     QVBoxLayout *wavelets_layout = new QVBoxLayout();
-    wavelets_layout->addWidget(this->wavelets_spinbox, 1);
-    wavelets_layout->addWidget(this->wavelets_label, 0);
+    wavelets_layout->addWidget(this->wavelets_spinbox);
+    wavelets_layout->addWidget(this->wavelets_label);
+    wavelets_layout->addWidget(this->synchro_checkbox);
+    wavelets_layout->addWidget(this->zoom_slider);
+    wavelets_layout->addWidget(this->zoom_label);
 
     this->main_widget = new QWidget(this);
 
     QGridLayout* layout = new QGridLayout();
     layout->addWidget(this->synchro_checkbox, 0, 0, 1, 1);
-    layout->addWidget(this->input_fine_view, 0, 1, 1, 1);
-    layout->addWidget(this->input_DWT_view, 0, 2, 1, 1);
-    layout->addWidget(this->output_DWT_view, 1, 2, 1, 1);
-    layout->addWidget(this->output_fine_view, 1, 1, 1, 1);
-    layout->addLayout(zoom_left_layout, 1, 0, 1, 1);
-    layout->addLayout(zoom_right_layout, 1, 3, 1, 1);
-    layout->addLayout(wavelets_layout, 0, 3, 1, 1);
+    layout->addWidget(this->input_fine_view, 0, 0, 1, 1);
+    layout->addWidget(this->input_DWT_view, 0, 1, 1, 1);
+    layout->addWidget(this->output_DWT_view, 1, 1, 1, 1);
+    layout->addWidget(this->output_fine_view, 1, 0, 1, 1);
+    layout->addLayout(wavelets_layout, 0, 2, 1, 1);
 
     this->main_widget->setLayout(layout);
 
@@ -196,13 +176,9 @@ void MainWindow::resetUI()
     this->filtered = false;
     this->zoom_level = 1;
 
-    this->zoom_left_label->setText("Zoom x " + QString::number(this->getZoomLevel()));
-    this->zoom_right_label->setText("Zoom x " + QString::number(this->getZoomLevel()));
-
-    this->zoom_left_slider->setValue(this->getZoomLevel());
-    this->zoom_left_slider->setEnabled(false);
-    this->zoom_right_slider->setValue(this->getZoomLevel());
-    this->zoom_right_slider->setEnabled(false);
+    this->zoom_label->setText("Zoom x " + QString::number(this->getZoomLevel()));
+    this->zoom_slider->setValue(this->getZoomLevel());
+    this->zoom_slider->setEnabled(false);
 
     this->wavelets_spinbox->setEnabled(false);
 }
@@ -214,8 +190,7 @@ void MainWindow::inputFineDisplayer()
 {
     WorkSpace* ws = WorkSpace::getInstance();
 
-    this->zoom_left_slider->setEnabled(true);
-    this->zoom_right_slider->setEnabled(true);
+    this->zoom_slider->setEnabled(true);
     this->input_fine_scene->clear();
 
     QPixmap input_fine_map(QPixmap::fromImage(ws->getSourceImage()));
@@ -341,8 +316,7 @@ void MainWindow::outputFineDisplayer()
   */
 void MainWindow::connectActions()
 {
-    QObject::connect(this->zoom_left_slider, SIGNAL(valueChanged(int)), this, SLOT(zoomModifier(int)));
-    QObject::connect(this->zoom_right_slider, SIGNAL(valueChanged(int)), this, SLOT(zoomModifier(int)));
+    QObject::connect(this->zoom_slider, SIGNAL(valueChanged(int)), this, SLOT(zoomModifier(int)));
     QObject::connect(this->wavelets_spinbox, SIGNAL(valueChanged(int)), this, SLOT(analysisModifier(int)));
     QObject::connect(this->action_load, SIGNAL(triggered()), this, SLOT(actionLoad()));
     QObject::connect(this->action_save, SIGNAL(triggered()), this, SLOT(actionSave()));
@@ -366,8 +340,7 @@ void MainWindow::connectActions()
 void MainWindow::zoomModifier(int val)
 {
     this->zoom_level = val;
-    this->zoom_left_label->setText("Zoom x " + QString::number(val));
-    this->zoom_right_label->setText("Zoom x " + QString::number(val));
+    this->zoom_label->setText("Zoom x " + QString::number(val));
     this->updateUI(ZOOM);
 }
 
@@ -447,6 +420,7 @@ void MainWindow::actionSwap()
 void MainWindow::actionZeroFilter()
 {
     WorkSpace* ws = WorkSpace::getInstance();
+    if(!this->isFiltered()) ws->copyMatrix(ws->getInputDWTMatrix(), ws->getOutputDWTMatrix());
     ws->zeroFilter();
     ws->updateOutputFineFromDWT();
     this->updateUI(FILTER);
@@ -454,13 +428,13 @@ void MainWindow::actionZeroFilter()
 }
 
 /**
-  * @brief Slot qui déplacement simultanément toutes les scrollbars horizontales
+  * @brief Slot qui gère le comportement des scrollbars horizontales
   */
 void MainWindow::updateHScrollBar(int val)
 {
     this->input_fine_view->horizontalScrollBar()->setValue(val);
     this->output_fine_view->horizontalScrollBar()->setValue(val);
-    if(this->getZoomLevel() > 0)
+    if(this->getZoomLevel() > 0 && !this->synchro_checkbox->isChecked())
     {
         this->updateUI(SCROLL);
     }
@@ -472,7 +446,7 @@ void MainWindow::updateHScrollBar(int val)
 }
 
 /**
-  * @brief Slot qui déplacement simultanément toutes les scrollbars verticales
+  * @brief Slot qui gère le comportement des scrollbars verticales
   */
 void MainWindow::updateVScrollBar(int val)
 {
@@ -489,6 +463,9 @@ void MainWindow::updateVScrollBar(int val)
     }
 }
 
+/**
+  * @brief Slot qui gère le comportement des scrollbars horizontales lors d'un zoom
+  */
 void MainWindow::updateZoomedHScrollBar(int val)
 {
     if(this->getZoomLevel() < 1)
@@ -500,9 +477,12 @@ void MainWindow::updateZoomedHScrollBar(int val)
     this->output_DWT_view->horizontalScrollBar()->setValue(val);
 }
 
+/**
+  * @brief Slot qui gère le comportement des scrollbars verticales lors d'un zoom
+  */
 void MainWindow::updateZoomedVScrollBar(int val)
 {
-    if(this->getZoomLevel() < 1)
+    if(this->getZoomLevel() < 1 && this->synchro_checkbox->isChecked())
     {
         this->input_fine_view->verticalScrollBar()->setValue(val);
         this->output_fine_view->verticalScrollBar()->setValue(val);

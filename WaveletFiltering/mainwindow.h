@@ -45,12 +45,10 @@ public:
 
     QSpinBox* wavelets_spinbox;
 
-    QSlider* zoom_left_slider;
-    QSlider* zoom_right_slider;
+    QSlider* zoom_slider;
 
     QLabel* wavelets_label;
-    QLabel* zoom_left_label;
-    QLabel* zoom_right_label;
+    QLabel* zoom_label;
 
     QAction* action_load;
     QAction* action_save;
