@@ -16,8 +16,15 @@
 #include <QScrollBar>
 
 
-enum status{LOAD, HAAR, FILTER, SYNTH, ZOOM, SCROLL};
+enum status{ALL, OUTPUT, DWT};
 
+/**
+  * @class MainWindow
+  * @brief Interface graphique
+  * @author Julien Vogel
+  * @version 1.0
+  * @date 27 octobre 2014
+  */
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -39,6 +46,11 @@ public:
     QGraphicsScene* output_DWT_scene;
     QGraphicsScene* output_fine_scene;
 
+    QPixmap input_fine_map;
+    QPixmap input_DWT_map;
+    QPixmap output_DWT_map;
+    QPixmap output_fine_map;
+
     QWidget* main_widget;
 
     QCheckBox* synchro_checkbox;
@@ -58,11 +70,9 @@ public:
     QAction* action_zero_filter;
 
     int getZoomLevel();
-    bool isFiltered();
 
 private:
     int zoom_level;
-    bool filtered;
 
     void runUI();
     void updateUI(status origin);
@@ -81,10 +91,10 @@ public slots:
     void actionSaveAll();
     void actionSwap();
     void actionZeroFilter();
-    void updateHScrollBar(int val);
-    void updateVScrollBar(int val);
-    void updateZoomedHScrollBar(int val);
-    void updateZoomedVScrollBar(int val);
+    void updateFineHorizontalScrollBar(int val);
+    void updateFineVerticalScrollBar(int val);
+    void updateDWTHorizontalScrollBar(int val);
+    void updateDWTVerticalScrollBar(int val);
 };
 
 #endif // MAINWINDOW_H

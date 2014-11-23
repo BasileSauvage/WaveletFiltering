@@ -13,6 +13,13 @@ struct block
 
 enum block_choice{DIAGONAL, HORIZONTAL, VERTICAL, LOWRES};
 
+/**
+  * @class WorkSpace
+  * @brief Structure de données
+  * @author Julien Vogel
+  * @version 1.0
+  * @date 19 octobre 2014
+  */
 class WorkSpace
 {
 
@@ -20,7 +27,7 @@ public:
     static void newInstance(QImage img);
     static WorkSpace* getInstance();
     void copyMatrix(float** src, float** dest);
-    void waveletTransform(bool apply_to_output, unsigned int target_level);
+    void waveletTransform(unsigned int target_level);
     void waveletAnalysis(float** mat, unsigned int width, unsigned int height);
     void waveletSynthesis(float** mat, unsigned int width, unsigned int height);
     void updateOutputFineFromDWT();
@@ -31,6 +38,9 @@ public:
     QImage zoomEditor(struct block zoom_block, float** mat);
 
     QImage getSourceImage();
+    QImage getInputDWTImage();
+    QImage getOutputDWTImage();
+    QImage getOutputFineImage();
     QImage getImageFromMatrix(float** mat);
     QImage getImageFromMatrix(float** mat, unsigned int mat_width, unsigned int mat_height);
     unsigned int getWidth();
@@ -46,6 +56,9 @@ private:
     WorkSpace(QImage img); // constructeur privé à cause du singleton
     ~WorkSpace();
     QImage source;
+    QImage input_DWT_img;
+    QImage output_DWT_img;
+    QImage output_fine_img;
     unsigned int current_analysis_level;
     float** input_fine_matrix;
     float** input_DWT_matrix;

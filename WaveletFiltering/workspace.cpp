@@ -34,10 +34,14 @@ WorkSpace::WorkSpace(QImage img)
         {
             input_fine_matrix[i][j] = qGray(img.pixel(i,j));
             input_DWT_matrix[i][j] = qGray(img.pixel(i,j));
-            output_DWT_matrix[i][j] = 0;
-            output_fine_matrix[i][j] = 0;
+            output_DWT_matrix[i][j] = qGray(img.pixel(i,j));
+            output_fine_matrix[i][j] = qGray(img.pixel(i,j));
         }
     }
+
+    this->input_DWT_img = this->getImageFromMatrix(this->getInputDWTMatrix());
+    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
+    this->output_fine_img = this->getImageFromMatrix(this->getOutputFineMatrix());
 }
 
 /**
@@ -111,7 +115,7 @@ void WorkSpace::copyMatrix(float **src, float **dest)
  * @param apply_to_output le booléen indiquant si on modifie également output_DWT_matrix ou non
  * @param target_level le niveau d'analyse à atteindre
  */
-void WorkSpace::waveletTransform(bool apply_to_output, unsigned int target_level)
+void WorkSpace::waveletTransform(unsigned int target_level)
 {
     if(this->current_analysis_level < target_level)
     {        
@@ -120,7 +124,7 @@ void WorkSpace::waveletTransform(bool apply_to_output, unsigned int target_level
         for(unsigned int lvl = current_analysis_level; lvl < target_level; lvl++, height/=2, width/=2)
         {
             this->waveletAnalysis(this->getInputDWTMatrix(), width, height);
-            if(apply_to_output) this->waveletAnalysis(this->getOutputDWTMatrix(), width, height);
+            this->waveletAnalysis(this->getOutputDWTMatrix(), width, height);
         }
     }
     else
@@ -130,11 +134,13 @@ void WorkSpace::waveletTransform(bool apply_to_output, unsigned int target_level
         for(unsigned int lvl = target_level; lvl < current_analysis_level; lvl++, height*=2, width*=2)
         {
             this->waveletSynthesis(this->getInputDWTMatrix(), width, height);
-            if(apply_to_output) this->waveletSynthesis(this->getOutputDWTMatrix(), width, height);
+            this->waveletSynthesis(this->getOutputDWTMatrix(), width, height);
         }
     }
 
     this->current_analysis_level = target_level;
+    this->input_DWT_img = this->getImageFromMatrix(this->getInputDWTMatrix());
+    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
 }
 
 /**
@@ -247,6 +253,8 @@ void WorkSpace::zeroFilter()
             this->output_DWT_matrix[i][j] = 0;
         }
     }
+
+    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
 }
 
 /**
@@ -263,10 +271,12 @@ void WorkSpace::updateOutputFineFromDWT()
     {
         this->waveletSynthesis(this->getOutputFineMatrix(), width, height);
     }
+
+    this->output_fine_img = this->getImageFromMatrix(this->getOutputFineMatrix());
 }
 
 /**
- * @brief Sauvegarde une image dans le répertoire courant
+ * @brief Sauvegarde une image
  * @param img l'image à sauvegarder
  * @param fileName le nom de l'image
  */
@@ -338,11 +348,12 @@ void WorkSpace::swap()
         {
             input_fine_matrix[i][j] = output_fine_matrix[i][j];
             input_DWT_matrix[i][j] = output_fine_matrix[i][j];
-            output_DWT_matrix[i][j] = 0;
-            output_fine_matrix[i][j] = 0;
+            output_DWT_matrix[i][j] = output_fine_matrix[i][j];
         }
     }
-    this->source = this->getImageFromMatrix(this->input_fine_matrix);
+    this->source = this->getImageFromMatrix(this->getInputFineMatrix());
+    this->input_DWT_img = this->getImageFromMatrix(this->getInputDWTMatrix());
+    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
 
     this->current_analysis_level = 0;
 
@@ -467,6 +478,33 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
 QImage WorkSpace::getSourceImage()
 {
     return this->source;
+}
+
+/**
+ * @brief Renvoie l'image de la transformée en ondelettes de la source
+ * @return image DWT input
+ */
+QImage WorkSpace::getInputDWTImage()
+{
+    return this->input_DWT_img;
+}
+
+/**
+ * @brief Renvoie l'image de la transformée en ondelettes de la sortie
+ * @return image DWT output
+ */
+QImage WorkSpace::getOutputDWTImage()
+{
+    return this->output_DWT_img;
+}
+
+/**
+ * @brief Renvoie l'image de sortie
+ * @return image sortie
+ */
+QImage WorkSpace::getOutputFineImage()
+{
+    return this->output_fine_img;
 }
 
 /**
