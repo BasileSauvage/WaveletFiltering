@@ -57,10 +57,12 @@ public:
 
     QSpinBox* wavelets_spinbox;
 
-    QSlider* zoom_slider;
+	QSlider* zoom_slider_fine;
+	QSlider* zoom_slider_DWT;
 
     QLabel* wavelets_label;
-    QLabel* zoom_label;
+	QLabel* zoom_label_fine;
+	QLabel* zoom_label_DWT;
 
     QAction* action_load;
     QAction* action_save;
@@ -69,10 +71,12 @@ public:
     QAction* action_quit;
     QAction* action_zero_filter;
 
-    int getZoomLevel();
+	int getZoomLevelFine();
+	int getZoomLevelDWT();
 
 private:
-    int zoom_level;
+	int zoom_level_fine;
+	int zoom_level_DWT;
 
     void runUI();
     void updateUI(status origin);
@@ -84,8 +88,9 @@ private:
     void connectActions();
 
 public slots:
-    void zoomModifier(int val);
-    void analysisModifier(int val);
+	void zoomModifierFine(int val);
+	void zoomModifierDWT(int val);
+	void analysisModifier(int val);
     void actionLoad();
     void actionSave();
     void actionSaveAll();

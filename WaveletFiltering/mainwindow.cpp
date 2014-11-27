@@ -33,15 +33,15 @@ void MainWindow::runUI()
     this->menu_transform = new QMenu("Transformation", this);
 
     this->action_load = new QAction("Charger image", this);
-    this->action_load->setShortcut(QKeySequence("Ctrl+N"));
+	this->action_load->setShortcut(QKeySequence("Ctrl+O"));
     this->action_save = new QAction("Sauvegarder résultat", this);
     this->action_save->setShortcut(QKeySequence("Ctrl+S"));
     this->action_save_all = new QAction("Sauvegarder tout", this);
     this->action_save_all->setShortcut(QKeySequence("Ctrl+Shift+S"));
     this->action_swap = new QAction("Remonter résultat", this);
-    this->action_swap->setShortcut(QKeySequence("Ctrl+Shift+N"));
+	this->action_swap->setShortcut(QKeySequence("Ctrl+R"));
     this->action_quit = new QAction("Quitter", this);
-    this->action_quit->setShortcut(QKeySequence("Ctrl+W"));
+	this->action_quit->setShortcut(QKeySequence("Ctrl+Q"));
 
     this->action_zero_filter = new QAction("Filtre zéro", this);
 
@@ -79,31 +79,49 @@ void MainWindow::runUI()
     this->output_fine_view->setFixedSize(512, 512);
     this->output_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
 
-    this->zoom_level = 0;
+	this->zoom_level_fine = 0;
+	this->zoom_level_DWT = 0;
 
-    this->zoom_label = new QLabel(this);
-    this->zoom_label->setText("Facteur zoom : * " + QString::number(this->getZoomLevel()+1));
+	this->zoom_label_fine = new QLabel(this);
+	this->zoom_label_fine->setText("zoom * " + QString::number(this->getZoomLevelFine()+1));
+	this->zoom_label_DWT = new QLabel(this);
+	this->zoom_label_DWT->setText("zoom * " + QString::number(this->getZoomLevelDWT()+1));
 
-    this->zoom_slider = new QSlider(Qt::Vertical, this);
-    this->zoom_slider->setRange(-3, 9);
-    this->zoom_slider->setValue(this->getZoomLevel());
-    this->zoom_slider->setTickInterval(1);
-    this->zoom_slider->setEnabled(false);
+	this->zoom_slider_fine = new QSlider(Qt::Vertical, this);
+	this->zoom_slider_fine->setRange(-3, 9);
+	this->zoom_slider_fine->setValue(this->getZoomLevelFine());
+	this->zoom_slider_fine->setTickInterval(1);
+	this->zoom_slider_fine->setEnabled(false);
 
-    this->wavelets_label = new QLabel(this);
+	this->zoom_slider_DWT = new QSlider(Qt::Vertical, this);
+	this->zoom_slider_DWT->setRange(-3, 9);
+	this->zoom_slider_DWT->setValue(this->getZoomLevelDWT());
+	this->zoom_slider_DWT->setTickInterval(1);
+	this->zoom_slider_DWT->setEnabled(false);
+
+	this->wavelets_label = new QLabel(this);
     this->wavelets_label->setText("Nv analyse");
 
     this->wavelets_spinbox = new QSpinBox(this);
     this->wavelets_spinbox->setEnabled(false);
 
-    this->synchro_checkbox = new QCheckBox("Désynchroniser vues", this);
+	this->synchro_checkbox = new QCheckBox("Synchroniser vues", this);
 
-    QVBoxLayout *wavelets_layout = new QVBoxLayout();
-    wavelets_layout->addWidget(this->wavelets_spinbox);
-    wavelets_layout->addWidget(this->wavelets_label);
-    wavelets_layout->addWidget(this->synchro_checkbox);
-    wavelets_layout->addWidget(this->zoom_slider);
-    wavelets_layout->addWidget(this->zoom_label);
+//    QVBoxLayout *wavelets_layout = new QVBoxLayout();
+//    wavelets_layout->addWidget(this->wavelets_spinbox);
+//    wavelets_layout->addWidget(this->wavelets_label);
+//    wavelets_layout->addWidget(this->synchro_checkbox);
+//    wavelets_layout->addWidget(this->zoom_slider);
+//    wavelets_layout->addWidget(this->zoom_label);
+
+	QGridLayout *wavelets_layout = new QGridLayout();
+	wavelets_layout->addWidget(this->wavelets_spinbox, 0,0,1,1,Qt::AlignRight);
+	wavelets_layout->addWidget(this->wavelets_label,0,1,1,1,Qt::AlignLeft);
+	wavelets_layout->addWidget(this->synchro_checkbox,1,0,1,2,Qt::AlignLeft);
+	wavelets_layout->addWidget(this->zoom_slider_fine,2,0,1,1);
+	wavelets_layout->addWidget(this->zoom_label_fine,3,0,1,1);
+	wavelets_layout->addWidget(this->zoom_slider_DWT,2,1,1,1);
+	wavelets_layout->addWidget(this->zoom_label_DWT,3,1,1,1);
 
     this->main_widget = new QWidget(this);
 
@@ -160,11 +178,16 @@ void MainWindow::resetUI()
     this->action_swap->setEnabled(false);
     this->action_zero_filter->setEnabled(false);
 
-    this->zoom_level = 0;
+	this->zoom_level_fine = 0;
+	this->zoom_level_DWT = 0;
 
-    this->zoom_label->setText("Facteur zoom : * " + QString::number(this->getZoomLevel()+1));
-    this->zoom_slider->setValue(this->getZoomLevel());
-    this->zoom_slider->setEnabled(false);
+	this->zoom_label_fine->setText("zoom * " + QString::number(this->getZoomLevelFine()+1));
+	this->zoom_slider_fine->setValue(this->getZoomLevelFine());
+	this->zoom_slider_fine->setEnabled(false);
+
+	this->zoom_label_DWT->setText("zoom * " + QString::number(this->getZoomLevelDWT()+1));
+	this->zoom_slider_DWT->setValue(this->getZoomLevelDWT());
+	this->zoom_slider_DWT->setEnabled(false);
 
     this->wavelets_spinbox->setEnabled(false);
 
@@ -178,14 +201,14 @@ void MainWindow::inputFineDisplayer()
 {
     WorkSpace* ws = WorkSpace::getInstance();
 
-    this->zoom_slider->setEnabled(true);
+	this->zoom_slider_fine->setEnabled(true);
     this->input_fine_scene->clear();
 
     this->input_fine_map = QPixmap::fromImage(ws->getSourceImage());
-    if(this->getZoomLevel() >= 0) this->input_fine_map = this->input_fine_map.scaled(ws->getWidth()*(this->getZoomLevel()+1), ws->getHeight()*(this->getZoomLevel()+1));
-    else this->input_fine_map = this->input_fine_map.scaled(ws->getWidth()/(1-this->getZoomLevel()), ws->getHeight()/(1-this->getZoomLevel()));
+	if(this->getZoomLevelFine() >= 0) this->input_fine_map = this->input_fine_map.scaled(ws->getWidth()*(this->getZoomLevelFine()+1), ws->getHeight()*(this->getZoomLevelFine()+1));
+	else this->input_fine_map = this->input_fine_map.scaled(ws->getWidth()/(1-this->getZoomLevelFine()), ws->getHeight()/(1-this->getZoomLevelFine()));
 
-    this->input_fine_scene->addPixmap(this->input_fine_map);
+	this->input_fine_scene->addPixmap(this->input_fine_map);
     this->input_fine_view->setSceneRect(this->input_fine_scene->itemsBoundingRect());
 }
 
@@ -196,7 +219,8 @@ void MainWindow::inputDWTDisplayer()
 {
     WorkSpace* ws = WorkSpace::getInstance();
 
-    this->action_zero_filter->setEnabled(true);
+	this->zoom_slider_DWT->setEnabled(true);
+	this->action_zero_filter->setEnabled(true);
     this->input_DWT_scene->clear();
 
     if(!this->wavelets_spinbox->isEnabled())
@@ -211,29 +235,34 @@ void MainWindow::inputDWTDisplayer()
         this->wavelets_spinbox->setEnabled(true);
     }
 
-    if(this->getZoomLevel() == 0 || (this->getZoomLevel() > 0 && ws->getCurrentAnalysisLevel() == 0))
-    {
-        this->input_DWT_map = QPixmap::fromImage(ws->getInputDWTImage());
-        this->input_DWT_map = this->input_DWT_map.scaled(ws->getWidth()*(this->getZoomLevel()+1), ws->getHeight()*(this->getZoomLevel()+1));
-    }
-    else if(this->getZoomLevel() < 0)
-    {
-        this->input_DWT_map = QPixmap::fromImage(ws->getInputDWTImage());
-        this->input_DWT_map = this->input_DWT_map.scaled(ws->getWidth()/(1-this->getZoomLevel()), ws->getHeight()/(1-this->getZoomLevel()));
-    }
-    else
-    {
-        struct block zoom_block;
-        zoom_block.top_left_x = this->input_fine_view->horizontalScrollBar()->value()/(this->getZoomLevel()+1);
-        zoom_block.top_left_y = this->input_fine_view->verticalScrollBar()->value()/(this->getZoomLevel()+1);
-        if(zoom_block.top_left_x > ws->getWidth() - 1 - this->input_fine_view->width()/(this->getZoomLevel()+1)) zoom_block.top_left_x = ws->getWidth() - 1 - this->input_fine_view->width()/(this->getZoomLevel()+1);
-        if(zoom_block.top_left_y > ws->getHeight() - 1 - this->input_fine_view->height()/(this->getZoomLevel()+1)) zoom_block.top_left_y = ws->getHeight() - 1 - this->input_fine_view->height()/(this->getZoomLevel()+1);
-        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(this->getZoomLevel()+1)) - 1;
-        zoom_block.bottom_right_y = (zoom_block.top_left_y + this->input_fine_view->height()/(this->getZoomLevel()+1)) - 1;
+	int zl_fine = this->getZoomLevelFine();
+	int zl_DWT = this->getZoomLevelDWT();
 
-        this->input_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getInputDWTMatrix()));
-        this->input_DWT_map = this->input_DWT_map.scaled(ws->getWidth()*(this->getZoomLevel()+1), ws->getHeight()*(this->getZoomLevel()+1));
-    }
+	if(zl_fine <= 0)
+	{
+		this->input_DWT_map = QPixmap::fromImage(ws->getInputDWTImage());
+	}
+	else
+	{
+		struct block zoom_block;
+		zoom_block.top_left_x = this->input_fine_view->horizontalScrollBar()->value()/(zl_fine+1);
+		zoom_block.top_left_y = this->input_fine_view->verticalScrollBar()->value()/(zl_fine+1);
+		if(zoom_block.top_left_x > ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1)) zoom_block.top_left_x = ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1);
+		if(zoom_block.top_left_y > ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1)) zoom_block.top_left_y = ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1);
+		zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(zl_fine+1)) - 1;
+		zoom_block.bottom_right_y = (zoom_block.top_left_y + this->input_fine_view->height()/(zl_fine+1)) - 1;
+
+		this->input_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getInputDWTMatrix()));
+	}
+
+	if(zl_DWT < 0)
+	{
+		this->input_DWT_map = this->input_DWT_map.scaled(ws->getWidth()/(1-zl_DWT), ws->getHeight()/(1-zl_DWT));
+	}
+	else
+	{
+		this->input_DWT_map = this->input_DWT_map.scaled(ws->getWidth()*(zl_DWT+1), ws->getHeight()*(zl_DWT+1));
+	}
 
     this->input_DWT_scene->addPixmap(this->input_DWT_map);
     this->input_DWT_view->setSceneRect(this->input_DWT_scene->itemsBoundingRect());
@@ -248,30 +277,34 @@ void MainWindow::outputDWTDisplayer()
 
     this->output_DWT_scene->clear();
 
-    if(this->getZoomLevel() == 0 || (this->getZoomLevel() > 0 && ws->getCurrentAnalysisLevel() == 0))
-    {
-        this->output_DWT_map = QPixmap::fromImage(ws->getOutputDWTImage());
-        this->output_DWT_map = this->output_DWT_map.scaled(ws->getWidth()*(this->getZoomLevel()+1), ws->getHeight()*(this->getZoomLevel()+1));
+	int zl_fine = this->getZoomLevelFine();
+	int zl_DWT = this->getZoomLevelDWT();
 
-    }
-    else if(this->getZoomLevel() < 0)
-    {
-        this->output_DWT_map = QPixmap::fromImage(ws->getOutputDWTImage());
-        this->output_DWT_map = this->output_DWT_map.scaled(ws->getWidth()/(1-this->getZoomLevel()), ws->getHeight()/(1-this->getZoomLevel()));
-    }
-    else
-    {
-        struct block zoom_block;
-        zoom_block.top_left_x = this->input_fine_view->horizontalScrollBar()->value()/(this->getZoomLevel()+1);
-        zoom_block.top_left_y = this->input_fine_view->verticalScrollBar()->value()/(this->getZoomLevel()+1);
-        if(zoom_block.top_left_x > ws->getWidth() - 1 - this->input_fine_view->width()/(this->getZoomLevel()+1)) zoom_block.top_left_x = ws->getWidth() - 1 - this->input_fine_view->width()/(this->getZoomLevel()+1);
-        if(zoom_block.top_left_y > ws->getHeight() - 1 - this->input_fine_view->height()/(this->getZoomLevel()+1)) zoom_block.top_left_y = ws->getHeight() - 1 - this->input_fine_view->height()/(this->getZoomLevel()+1);
-        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(this->getZoomLevel()+1)) - 1;
-        zoom_block.bottom_right_y = (zoom_block.top_left_y + this->input_fine_view->height()/(this->getZoomLevel()+1)) - 1;
+	if(zl_fine <= 0)
+	{
+		this->output_DWT_map = QPixmap::fromImage(ws->getOutputDWTImage());
+	}
+	else
+	{
+		struct block zoom_block;
+		zoom_block.top_left_x = this->output_fine_view->horizontalScrollBar()->value()/(zl_fine+1);
+		zoom_block.top_left_y = this->output_fine_view->verticalScrollBar()->value()/(zl_fine+1);
+		if(zoom_block.top_left_x > ws->getWidth() - 1 - this->output_fine_view->width()/(zl_fine+1)) zoom_block.top_left_x = ws->getWidth() - 1 - this->output_fine_view->width()/(zl_fine+1);
+		if(zoom_block.top_left_y > ws->getHeight() - 1 - this->output_fine_view->height()/(zl_fine+1)) zoom_block.top_left_y = ws->getHeight() - 1 - this->output_fine_view->height()/(zl_fine+1);
+		zoom_block.bottom_right_x = (zoom_block.top_left_x + this->output_fine_view->width()/(zl_fine+1)) - 1;
+		zoom_block.bottom_right_y = (zoom_block.top_left_y + this->output_fine_view->height()/(zl_fine+1)) - 1;
 
-        this->output_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getOutputDWTMatrix()));
-        this->output_DWT_map = this->output_DWT_map.scaled(ws->getWidth()*(this->getZoomLevel()+1), ws->getHeight()*(this->getZoomLevel()+1));
-    }
+		this->output_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getOutputDWTMatrix()));
+	}
+
+	if(zl_DWT < 0)
+	{
+		this->output_DWT_map = this->output_DWT_map.scaled(ws->getWidth()/(1-zl_DWT), ws->getHeight()/(1-zl_DWT));
+	}
+	else
+	{
+		this->output_DWT_map = this->output_DWT_map.scaled(ws->getWidth()*(zl_DWT+1), ws->getHeight()*(zl_DWT+1));
+	}
 
     this->output_DWT_scene->addPixmap(this->output_DWT_map);
     this->output_DWT_view->setSceneRect(this->output_DWT_scene->itemsBoundingRect());
@@ -290,8 +323,8 @@ void MainWindow::outputFineDisplayer()
     this->output_fine_scene->clear();
 
     this-> output_fine_map = QPixmap::fromImage(ws->getOutputFineImage());
-    if(this->getZoomLevel() >= 0) this->output_fine_map = this->output_fine_map.scaled(ws->getWidth()*(this->getZoomLevel()+1), ws->getHeight()*(this->getZoomLevel()+1));
-    else this->output_fine_map = this->output_fine_map.scaled(ws->getWidth()/(1-this->getZoomLevel()), ws->getHeight()/(1-this->getZoomLevel()));
+	if(this->getZoomLevelFine() >= 0) this->output_fine_map = this->output_fine_map.scaled(ws->getWidth()*(this->getZoomLevelFine()+1), ws->getHeight()*(this->getZoomLevelFine()+1));
+	else this->output_fine_map = this->output_fine_map.scaled(ws->getWidth()/(1-this->getZoomLevelFine()), ws->getHeight()/(1-this->getZoomLevelFine()));
 
     this->output_fine_scene->addPixmap(this->output_fine_map);
     this->output_fine_view->setSceneRect(this->output_fine_scene->itemsBoundingRect());
@@ -302,8 +335,9 @@ void MainWindow::outputFineDisplayer()
   */
 void MainWindow::connectActions()
 {
-    QObject::connect(this->zoom_slider, SIGNAL(valueChanged(int)), this, SLOT(zoomModifier(int)));
-    QObject::connect(this->wavelets_spinbox, SIGNAL(valueChanged(int)), this, SLOT(analysisModifier(int)));
+	QObject::connect(this->zoom_slider_fine, SIGNAL(valueChanged(int)), this, SLOT(zoomModifierFine(int)));
+	QObject::connect(this->zoom_slider_DWT, SIGNAL(valueChanged(int)), this, SLOT(zoomModifierDWT(int)));
+	QObject::connect(this->wavelets_spinbox, SIGNAL(valueChanged(int)), this, SLOT(analysisModifier(int)));
     QObject::connect(this->action_load, SIGNAL(triggered()), this, SLOT(actionLoad()));
     QObject::connect(this->action_save, SIGNAL(triggered()), this, SLOT(actionSave()));
     QObject::connect(this->action_save_all, SIGNAL(triggered()), this, SLOT(actionSaveAll()));
@@ -321,14 +355,25 @@ void MainWindow::connectActions()
 }
 
 /**
-  * @brief Slot qui va gérer les déplacements du slider de zoom
+  * @brief Slot qui va gérer les déplacements du slider de zoom fin
   */
-void MainWindow::zoomModifier(int val)
+void MainWindow::zoomModifierFine(int val)
 {
-    this->zoom_level = val;
-    if(zoom_level >= 0) this->zoom_label->setText("Facteur zoom : * " + QString::number(val+1));
-    else this->zoom_label->setText("Facteur zoom : / " + QString::number(-val+1));
+	this->zoom_level_fine = val;
+	if(zoom_level_fine >= 0) this->zoom_label_fine->setText("zoom * " + QString::number(val+1));
+	else this->zoom_label_fine->setText("zoom / " + QString::number(-val+1));
     this->updateUI(ALL);
+}
+
+/**
+  * @brief Slot qui va gérer les déplacements du slider de zoom DWT
+  */
+void MainWindow::zoomModifierDWT(int val)
+{
+	this->zoom_level_DWT = val;
+	if(zoom_level_DWT >= 0) this->zoom_label_DWT->setText("zoom * " + QString::number(val+1));
+	else this->zoom_label_DWT->setText("zoom / " + QString::number(-val+1));
+	this->updateUI(ALL);
 }
 
 /**
@@ -419,16 +464,16 @@ void MainWindow::updateFineHorizontalScrollBar(int val)
     this->output_fine_view->horizontalScrollBar()->setValue(val);
     if(this->synchro_checkbox->isChecked())
     {
-        if(this->getZoomLevel() > 0)
-        {
+//		if(this->getZoomLevelFine() > 0)
+//        {
             this->updateUI(DWT);
-        }
+//        }
     }
-    else
-    {
-        this->input_DWT_view->horizontalScrollBar()->setValue(val);
-        this->output_DWT_view->horizontalScrollBar()->setValue(val);
-    }
+//    else
+//    {
+//        this->input_DWT_view->horizontalScrollBar()->setValue(val);
+//        this->output_DWT_view->horizontalScrollBar()->setValue(val);
+//    }
 }
 
 /**
@@ -441,16 +486,16 @@ void MainWindow::updateFineVerticalScrollBar(int val)
 
     if(this->synchro_checkbox->isChecked())
     {
-        if(this->getZoomLevel() > 0)
-        {
+//		if(this->getZoomLevelFine() > 0)
+//        {
             this->updateUI(DWT);
-        }
+//        }
     }
-    else
-    {
-        this->input_DWT_view->verticalScrollBar()->setValue(val);
-        this->output_DWT_view->verticalScrollBar()->setValue(val);
-    }
+//    else
+//    {
+//        this->input_DWT_view->verticalScrollBar()->setValue(val);
+//        this->output_DWT_view->verticalScrollBar()->setValue(val);
+//    }
 }
 
 /**
@@ -461,11 +506,11 @@ void MainWindow::updateDWTHorizontalScrollBar(int val)
     this->input_DWT_view->horizontalScrollBar()->setValue(val);
     this->output_DWT_view->horizontalScrollBar()->setValue(val);
 
-    if(!this->synchro_checkbox->isChecked())
-    {
-        this->input_fine_view->horizontalScrollBar()->setValue(val);
-        this->output_fine_view->horizontalScrollBar()->setValue(val);
-    }
+//    if(!this->synchro_checkbox->isChecked())
+//    {
+//        this->input_fine_view->horizontalScrollBar()->setValue(val);
+//        this->output_fine_view->horizontalScrollBar()->setValue(val);
+//    }
 }
 
 /**
@@ -476,19 +521,28 @@ void MainWindow::updateDWTVerticalScrollBar(int val)
     this->input_DWT_view->verticalScrollBar()->setValue(val);
     this->output_DWT_view->verticalScrollBar()->setValue(val);
 
-    if(!this->synchro_checkbox->isChecked())
-    {
-        this->input_fine_view->verticalScrollBar()->setValue(val);
-        this->output_fine_view->verticalScrollBar()->setValue(val);
-    }
+//    if(!this->synchro_checkbox->isChecked())
+//    {
+//        this->input_fine_view->verticalScrollBar()->setValue(val);
+//        this->output_fine_view->verticalScrollBar()->setValue(val);
+//    }
 }
 
 
 /**
-  * @brief Accesseur du niveau de zoom
+  * @brief Accesseur du niveau de zoom fin
   * @return niveau de zoom
   */
-int MainWindow::getZoomLevel()
+int MainWindow::getZoomLevelFine()
 {
-    return this->zoom_level;
+	return this->zoom_level_fine;
+}
+
+/**
+  * @brief Accesseur du niveau de zoom DWT
+  * @return niveau de zoom
+  */
+int MainWindow::getZoomLevelDWT()
+{
+	return this->zoom_level_DWT;
 }
