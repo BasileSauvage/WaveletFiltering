@@ -408,7 +408,7 @@ void MainWindow::analysisModifier(int val)
   */
 void MainWindow::actionLoad()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Charger une image"), "../Images", tr("Images (*.jpg *.bmp *.tif)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Charger une image"), "../Images", tr("Images (*.jpg *.bmp *.tif *.png)"));
 
     if(fileName != 0 && fileName.length() > 0)
     {
@@ -423,7 +423,7 @@ void MainWindow::actionLoad()
   */
 void MainWindow::actionSave()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Sauvegarder une image"), "../Images", tr("Images (*.jpg *.bmp *.tif)"));
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Sauvegarder une image"), "../Images", tr("Images (*.jpg *.bmp *.tif *.png)"));
 
     if(fileName != 0 && fileName.length() > 0)
     {
