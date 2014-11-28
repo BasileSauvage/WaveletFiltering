@@ -245,11 +245,13 @@ void MainWindow::inputDWTDisplayer()
 	else
 	{
 		struct block zoom_block;
-		zoom_block.top_left_x = this->input_fine_view->horizontalScrollBar()->value()/(zl_fine+1);
-		zoom_block.top_left_y = this->input_fine_view->verticalScrollBar()->value()/(zl_fine+1);
-		if(zoom_block.top_left_x > ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1)) zoom_block.top_left_x = ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1);
-		if(zoom_block.top_left_y > ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1)) zoom_block.top_left_y = ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1);
-		zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(zl_fine+1)) - 1;
+        zoom_block.top_left_x = std::min<int>(this->input_fine_view->horizontalScrollBar()->value()/(zl_fine+1),
+                                         ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1)) ;
+
+        zoom_block.top_left_y = std::min<int>( this->input_fine_view->verticalScrollBar()->value()/(zl_fine+1),
+                                               ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1));
+
+        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(zl_fine+1)) - 1;
 		zoom_block.bottom_right_y = (zoom_block.top_left_y + this->input_fine_view->height()/(zl_fine+1)) - 1;
 
 		this->input_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getInputDWTMatrix()));
@@ -287,11 +289,13 @@ void MainWindow::outputDWTDisplayer()
 	else
 	{
 		struct block zoom_block;
-		zoom_block.top_left_x = this->output_fine_view->horizontalScrollBar()->value()/(zl_fine+1);
-		zoom_block.top_left_y = this->output_fine_view->verticalScrollBar()->value()/(zl_fine+1);
-		if(zoom_block.top_left_x > ws->getWidth() - 1 - this->output_fine_view->width()/(zl_fine+1)) zoom_block.top_left_x = ws->getWidth() - 1 - this->output_fine_view->width()/(zl_fine+1);
-		if(zoom_block.top_left_y > ws->getHeight() - 1 - this->output_fine_view->height()/(zl_fine+1)) zoom_block.top_left_y = ws->getHeight() - 1 - this->output_fine_view->height()/(zl_fine+1);
-		zoom_block.bottom_right_x = (zoom_block.top_left_x + this->output_fine_view->width()/(zl_fine+1)) - 1;
+        zoom_block.top_left_x = std::min<int>( this->output_fine_view->horizontalScrollBar()->value()/(zl_fine+1),
+                                               ws->getWidth() - 1 - this->output_fine_view->width()/(zl_fine+1));
+
+        zoom_block.top_left_y = std::min<int>(this->output_fine_view->verticalScrollBar()->value()/(zl_fine+1),
+                                              ws->getHeight() - 1 - this->output_fine_view->height()/(zl_fine+1));
+
+        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->output_fine_view->width()/(zl_fine+1)) - 1;
 		zoom_block.bottom_right_y = (zoom_block.top_left_y + this->output_fine_view->height()/(zl_fine+1)) - 1;
 
 		this->output_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getOutputDWTMatrix()));
