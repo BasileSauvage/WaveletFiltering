@@ -297,14 +297,11 @@ QImage WorkSpace::getImageFromMatrix(float** mat)
     for(unsigned int j = 0; j < this->getHeight(); j++)
     {
         for(unsigned int i = 0; i < this->getWidth(); i++)
-            if(mat[i][j] < 0)
-            {
-                img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
-            }
-            else
-            {
-                img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
-            }
+        {
+            int v = std::fabs(mat[i][j]); // abs value, 0 is black, +/-255 is white
+//            int v = (mat[i][j]+255.f)/2.f; // -255 is black, 0 is grey,  +255 is white
+            img.setPixel(i, j, qRgb(v,v,v));
+        }
     }
 
     return img;
@@ -325,7 +322,8 @@ QImage WorkSpace::getImageFromMatrix(float** mat, unsigned int mat_width, unsign
     {
         for(unsigned int i = 0; i < mat_width; i++)
         {
-            int v = std::fabs(mat[i][j]);
+            int v = std::fabs(mat[i][j]); // abs value, 0 is black, +/-255 is white
+//            int v = (mat[i][j]+255.f)/2.f; // -255 is black, 0 is grey,  +255 is white
             img.setPixel(i, j, qRgb(v,v,v));
         }
     }
