@@ -324,14 +324,10 @@ QImage WorkSpace::getImageFromMatrix(float** mat, unsigned int mat_width, unsign
     for(unsigned int j = 0; j < mat_height; j++)
     {
         for(unsigned int i = 0; i < mat_width; i++)
-            if(mat[i][j] < 0)
-            {
-                img.setPixel(i, j, qRgb(-mat[i][j], -mat[i][j], -mat[i][j]));
-            }
-            else
-            {
-                img.setPixel(i, j, qRgb(mat[i][j], mat[i][j], mat[i][j]));
-            }
+        {
+            int v = std::fabs(mat[i][j]);
+            img.setPixel(i, j, qRgb(v,v,v));
+        }
     }
 
     return img;
