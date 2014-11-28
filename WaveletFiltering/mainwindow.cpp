@@ -238,13 +238,25 @@ void MainWindow::inputDWTDisplayer()
 	int zl_fine = this->getZoomLevelFine();
 	int zl_DWT = this->getZoomLevelDWT();
 
-	if(zl_fine <= 0)
-	{
+    /*
+     * the following test (zl_fine <= 0) is strange, ask Julien for that
+     * it seems that
+     * * the actual condition should be that the (input width * zoom) does not exceed the pixmap width
+     * * it works because input and pixmap are 512 x 512
+     *
+     * I tried to change the test to (zl_fine < 0) but then for zl_fine=0
+     * the second argument of std::min is negative and an error occurs.
+     * I don't understand the role of this second parameter.
+     */
+    if(zl_fine <= 0)
+    {
 		this->input_DWT_map = QPixmap::fromImage(ws->getInputDWTImage());
 	}
 	else
 	{
 		struct block zoom_block;
+//        int a = this->input_fine_view->horizontalScrollBar()->value();
+//        int b = this->input_fine_view->width() ;
         zoom_block.top_left_x = std::min<int>(this->input_fine_view->horizontalScrollBar()->value()/(zl_fine+1),
                                          ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1)) ;
 
