@@ -39,9 +39,9 @@ WorkSpace::WorkSpace(QImage img)
         }
     }
 
-    this->input_DWT_img = this->getImageFromMatrix(this->getInputDWTMatrix());
-    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
-    this->output_fine_img = this->getImageFromMatrix(this->getOutputFineMatrix());
+    this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
+    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
+    this->output_fine_img = this->getImageFromFineMatrix(this->getOutputFineMatrix());
 }
 
 /**
@@ -139,8 +139,8 @@ void WorkSpace::waveletTransform(unsigned int target_level)
     }
 
     this->current_analysis_level = target_level;
-    this->input_DWT_img = this->getImageFromMatrix(this->getInputDWTMatrix());
-    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
+    this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
+    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
 }
 
 /**
@@ -253,7 +253,7 @@ void WorkSpace::filterVanishCoarseDetails()
         }
     }
 
-    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
+    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
 }
 
 /**
@@ -288,7 +288,7 @@ void WorkSpace::filterRandomCoarseDetails()
         }
     }
 
-    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
+    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
 }
 
 /**
@@ -306,7 +306,7 @@ void WorkSpace::updateOutputFineFromDWT()
         this->waveletSynthesis(this->getOutputFineMatrix(), width, height);
     }
 
-    this->output_fine_img = this->getImageFromMatrix(this->getOutputFineMatrix());
+    this->output_fine_img = this->getImageFromDWTMatrix(this->getOutputFineMatrix());
 }
 
 /**
@@ -320,49 +320,111 @@ void WorkSpace::saveImage(QImage img, QString fileName)
 }
 
 /**
- * @brief Transforme une matrice de coefficients en image, les coefficients hors des bornes des niveaux de gris sont modifiés
- * @param mat la matrice de coefficients à convertir en image
- * @return matrice convertie
+ * @brief Transforme une matrice de coefficients fins en QImage
+ * @param mat la matrice de coefficients à convertir
+ * @return QImage
  */
-QImage WorkSpace::getImageFromMatrix(float** mat)
+QImage WorkSpace::getImageFromFineMatrix(float** mat)
 {
     QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
-
-    for(unsigned int j = 0; j < this->getHeight(); j++)
-    {
-        for(unsigned int i = 0; i < this->getWidth(); i++)
-        {
-            int v = std::fabs(mat[i][j]); // abs value, 0 is black, +/-255 is white
-//            int v = (mat[i][j]+255.f)/2.f; // -255 is black, 0 is grey,  +255 is white
-            img.setPixel(i, j, qRgb(v,v,v));
-        }
-    }
-
+    this->setSelectedBlock(LOWRES,0);
+    this->setImageFromMatrix_SC_in_block(mat,img);
     return img;
 }
 
 /**
- * @brief Fonction surchargée
- * @param mat la matrice de coefficients à convertir en image
- * @param mat_width la largeur de la future image
- * @param mat_height la hauteur de la future image
- * @return matrice convertie
+ * @brief Transforme une matrice de DWT en QImage
+ * @param mat la matrice de coefficients à convertir
+ * @return QImage
  */
-QImage WorkSpace::getImageFromMatrix(float** mat, unsigned int mat_width, unsigned int mat_height)
+QImage WorkSpace::getImageFromDWTMatrix(float** mat)
 {
-    QImage img(mat_width, mat_height, QImage::Format_ARGB32);
+    QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
+    this->setSelectedBlock(LOWRES,0);
+    this->setImageFromMatrix_WC_in_block(mat,img);
+    this->setSelectedBlock(LOWRES,this->getCurrentAnalysisLevel());
+    this->setImageFromMatrix_SC_in_block(mat,img);
+    return img;
+}
 
-    for(unsigned int j = 0; j < mat_height; j++)
+/**
+ * @brief Transforme une matrice de DWT en QImage, en accord avec le zoom sur l'image fine
+ * @param mat la matrice de coefficients à convertir
+ * @param zoom_block le bloc visible au niveau fin
+ * @return QImage
+ */
+
+QImage WorkSpace::getZoomedImageFromDWTMatrix(float** mat,struct block zoom_block)
+{
+    unsigned int bw = 1 + zoom_block.bottom_right_x - zoom_block.top_left_x;
+    unsigned int bh = 1 + zoom_block.bottom_right_y - zoom_block.top_left_y;
+    QImage img(bw, bh, QImage::Format_ARGB32);
+
+    // coefs d'ondelette
+    for(unsigned int l=1;  l <= getCurrentAnalysisLevel(); ++l)
     {
-        for(unsigned int i = 0; i < mat_width; i++)
-        {
-            int v = std::fabs(mat[i][j]); // abs value, 0 is black, +/-255 is white
-//            int v = (mat[i][j]+255.f)/2.f; // -255 is black, 0 is grey,  +255 is white
-            img.setPixel(i, j, qRgb(v,v,v));
-        }
+        bw /= 2;
+        bh /= 2;
+
+        this->setSelectedZoomedBlock(DIAGONAL, l, zoom_block);
+        this->setImageFromMatrix_WC_in_block(mat,img, bw-(int)this->getSelectedBlock().top_left_x, bh-(int)this->getSelectedBlock().top_left_y);
+
+        this->setSelectedZoomedBlock(HORIZONTAL, l, zoom_block);
+        this->setImageFromMatrix_WC_in_block(mat,img, -(int)this->getSelectedBlock().top_left_x, bh-(int)this->getSelectedBlock().top_left_y);
+
+        this->setSelectedZoomedBlock(VERTICAL, l, zoom_block);
+        this->setImageFromMatrix_WC_in_block(mat,img, bw-(int)this->getSelectedBlock().top_left_x, -(int)this->getSelectedBlock().top_left_y);
     }
 
+    // coefs d'echelle
+    this->setSelectedZoomedBlock(LOWRES, this->getCurrentAnalysisLevel(), zoom_block);
+    this->setImageFromMatrix_SC_in_block(mat,img, -(int)this->getSelectedBlock().top_left_x, -(int)this->getSelectedBlock().top_left_y);
+
+    // retour
     return img;
+}
+
+/**
+ * @brief traduit le bloc sélectionné d'une matrice de coefficients d'échelle en QImage (simple conversion de réel vers niveau de gris)
+ * @param mat la matrice de coefficients à convertir
+ * @param img la QImage destination
+ * @param shift_x décallage du bloc destination sur l'axe x
+ * @param shift_y décallage du bloc destination sur l'axe y
+ */
+void WorkSpace::setImageFromMatrix_SC_in_block(float** mat,QImage& img, int shift_x, int shift_y)
+{
+
+    for(unsigned int i = getSelectedBlock().top_left_x; i <= getSelectedBlock().bottom_right_x; i++)
+    {
+        for(unsigned int j = getSelectedBlock().top_left_y; j <= getSelectedBlock().bottom_right_y; j++)
+        {
+            int v = mat[i][j];
+            img.setPixel(i+shift_x, j+shift_y, qRgb(v,v,v));
+        }
+    }
+}
+
+/**
+ * @brief traduit le bloc sélectionné d'une matrice de coefficients d'ondelette en QImage (simple conversion de réel vers niveau de gris)
+ * @param mat la matrice de coefficients à convertir
+ * @param img la QImage destination
+ * @param shift_x décallage du bloc destination sur l'axe x
+ * @param shift_y décallage du bloc destination sur l'axe y
+ */
+void WorkSpace::setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shift_x, int shift_y){
+
+    for(unsigned int i = getSelectedBlock().top_left_x; i <= getSelectedBlock().bottom_right_x; i++)
+    {
+        for(unsigned int j = getSelectedBlock().top_left_y; j <= getSelectedBlock().bottom_right_y; j++)
+        {
+            //            int v = std::fabs(mat[i][j]); // abs value, 0 is black, +/-255 is white
+            //            int v = (mat[i][j]+255.f)/2.f; // -255 is black, 0 is grey,  +255 is white
+            //            img.setPixel(i, j, qRgb(v,v,v));
+            int r = std::max<float>(0,2.0f*mat[i][j]);
+            int b = std::max<float>(0,-2.0f*mat[i][j]);
+            img.setPixel(i+shift_x, j+shift_y, qRgb(r,0,b));
+        }
+    }
 }
 
 /**
@@ -379,9 +441,9 @@ void WorkSpace::swap()
             output_DWT_matrix[i][j] = output_fine_matrix[i][j];
         }
     }
-    this->source = this->getImageFromMatrix(this->getInputFineMatrix());
-    this->input_DWT_img = this->getImageFromMatrix(this->getInputDWTMatrix());
-    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
+    this->source = this->getImageFromFineMatrix(this->getInputFineMatrix());
+    this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
+    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
 
     this->current_analysis_level = 0;
 
@@ -392,8 +454,8 @@ void WorkSpace::swap()
 }
 
 /**
- * @brief Remplit la structure contenant le bloc sélectionné
- * @param choice le bloc désiré
+ * @brief calule le bloc sélectionné
+ * @param choice le bloc désiré (LOWRES,DIAGONAL,VERTICAL, ou HORIZONTAL)
  * @param analysis_level le niveau d'analyse désiré
  */
 void WorkSpace::setSelectedBlock(block_choice choice, unsigned int analysis_level)
@@ -428,14 +490,64 @@ void WorkSpace::setSelectedBlock(block_choice choice, unsigned int analysis_leve
             break;
     }
 }
+
 /**
+ * @brief calule le bloc sélectionné
+ * @param choice le bloc désiré (LOWRES,DIAGONAL,VERTICAL, ou HORIZONTAL)
+ * @param analysis_level le niveau d'analyse désiré
+ * @param fineZoomedBlock le bloc zoomé au niveau fin
+ */
+void WorkSpace::setSelectedZoomedBlock(block_choice choice, unsigned int analysis_level,block fineZoomedBlock)
+{
+    unsigned int tlx = fineZoomedBlock.top_left_x;
+    unsigned int tly = fineZoomedBlock.top_left_y;
+    unsigned int bw = 1 + fineZoomedBlock.bottom_right_x - fineZoomedBlock.top_left_x;
+    unsigned int bh = 1 + fineZoomedBlock.bottom_right_y - fineZoomedBlock.top_left_y;
+
+    unsigned int factor = pow(2, analysis_level);
+    tlx /= factor;
+    tly /= factor;
+    bw /= factor;
+    bh /= factor;
+
+    switch(choice)
+    {
+        case LOWRES:
+            this->selected_block.top_left_x = tlx;
+            this->selected_block.top_left_y = tly;
+            break;
+        case DIAGONAL:
+            this->selected_block.top_left_x = tlx + this->getWidth()/pow(2, analysis_level);
+            this->selected_block.top_left_y = tly + this->getHeight()/pow(2, analysis_level);
+            break;
+        case VERTICAL:
+            this->selected_block.top_left_x = tlx + this->getWidth()/pow(2, analysis_level);
+            this->selected_block.top_left_y = tly;
+            break;
+        case HORIZONTAL:
+            this->selected_block.top_left_x = tlx;
+            this->selected_block.top_left_y = tly + this->getHeight()/pow(2, analysis_level);
+            break;
+        default:
+            break;
+    }
+    this->selected_block.bottom_right_x = this->selected_block.top_left_x + bw - 1;
+    this->selected_block.bottom_right_y = this->selected_block.top_left_y + bh - 1;
+}
+
+
+
+
+
+
+/*
  * @brief Va zoomer sur une sous-partie de chaque bloc
  * @param zoom_block le bloc de l'image initiale sur lequel on veut zoomer
  * @return l'image calculée
  */
-QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
+/* QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
 {
-    // Etape 1
+    // Etape 1 : allocation matrice de résultat
     unsigned int block_height = 1 + zoom_block.bottom_right_y - zoom_block.top_left_y;
     unsigned int block_width = 1 + zoom_block.bottom_right_x - zoom_block.top_left_x;
 
@@ -446,48 +558,57 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
         result[i] = new float [block_height];
     }
 
-    // Etape 2
+    // Etape 2 : calcul du lowres
     this->setSelectedBlock(LOWRES, this->getCurrentAnalysisLevel());
-    for(unsigned int i = 0; i < block_height/pow(2, this->getCurrentAnalysisLevel()); i++)
+    unsigned int bh = block_height/pow(2, this->getCurrentAnalysisLevel());
+    unsigned int bw = block_width/pow(2, this->getCurrentAnalysisLevel());
+    unsigned int tlx = zoom_block.top_left_x/(unsigned int)pow(2, this->getCurrentAnalysisLevel());
+    unsigned int tly = zoom_block.top_left_y/(unsigned int)pow(2, this->getCurrentAnalysisLevel());
+    for(unsigned int i = 0; i < bh; i++)
     {
-        for(unsigned int j = 0; j < block_width/pow(2, this->getCurrentAnalysisLevel()); j++)
+        for(unsigned int j = 0; j < bw; j++)
         {
-            result[i][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, this->getCurrentAnalysisLevel())][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, this->getCurrentAnalysisLevel())];
+            result[i][j] = mat[i + this->getSelectedBlock().top_left_x + tlx][j + this->getSelectedBlock().top_left_y + tly];
         }
     }
 
-    // Etape 3
+    // Etape 3 : calcul des coefs d'ondelette
     for(unsigned int it = this->getCurrentAnalysisLevel(); it > 0; it--)
     {
+        unsigned int bh = block_height/(unsigned int)pow(2, it);
+        unsigned int bw = block_width/(unsigned int)pow(2, it);
+        unsigned int tlx = zoom_block.top_left_x/(unsigned int)pow(2, it);
+        unsigned int tly = zoom_block.top_left_y/(unsigned int)pow(2, it);
+
         this->setSelectedBlock(DIAGONAL, it);
-        for(unsigned int i = 0; i < block_height/pow(2, it); i++)
+        for(unsigned int i = 0; i < bh; i++)
         {
-            for(unsigned int j = 0; j < block_width/pow(2, it); j++)
+            for(unsigned int j = 0; j < bw; j++)
             {
-                result[i + block_width/(unsigned int)pow(2, it)][j + block_height/(unsigned int)pow(2, it)] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, it)][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, it)];
+                result[i + bw][j + bh] = mat[i + this->getSelectedBlock().top_left_x + tlx][j + this->getSelectedBlock().top_left_y + tly];
             }
         }
 
         this->setSelectedBlock(HORIZONTAL, it);
-        for(unsigned int i = 0; i < block_height/pow(2, it); i++)
+        for(unsigned int i = 0; i < bh; i++)
         {
-            for(unsigned int j = 0; j < block_width/pow(2, it); j++)
+            for(unsigned int j = 0; j < bw; j++)
             {
-                result[i][j + block_height/(unsigned int)pow(2, it)] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, it)][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, it)];
+                result[i][j + bh] = mat[i + this->getSelectedBlock().top_left_x + tlx][j + this->getSelectedBlock().top_left_y + tly];
             }
         }
 
         this->setSelectedBlock(VERTICAL, it);
-        for(unsigned int i = 0; i < block_height/pow(2, it); i++)
+        for(unsigned int i = 0; i < bh; i++)
         {
-            for(unsigned int j = 0; j < block_width/pow(2, it); j++)
+            for(unsigned int j = 0; j < bw; j++)
             {
-                result[i + block_width/(unsigned int)pow(2, it)][j] = mat[i + this->getSelectedBlock().top_left_x + zoom_block.top_left_x/(unsigned int)pow(2, it)][j + this->getSelectedBlock().top_left_y + zoom_block.top_left_y/(unsigned int)pow(2, it)];
+                result[i + bw][j] = mat[i + this->getSelectedBlock().top_left_x + tlx][j + this->getSelectedBlock().top_left_y + tly];
             }
         }
     }
 
-    QImage img_result = this->getImageFromMatrix(result, block_width, block_height);
+    QImage img_result = this->getImageFromDWTMatrix(result);//, block_width, block_height);
 
     for(unsigned int j = 0; j < block_width; j++)
     {
@@ -498,6 +619,7 @@ QImage WorkSpace::zoomEditor(struct block zoom_block, float** mat)
 
     return img_result;
 }
+*/
 
 /**
  * @brief Renvoie l'image source
@@ -560,6 +682,24 @@ unsigned int WorkSpace::getHeight()
 unsigned int WorkSpace::getCurrentAnalysisLevel()
 {
     return this->current_analysis_level;
+}
+
+/**
+ * @brief calcule le niveau d'analyse maximal (puissance de 2 maximale qui divise les deux tailles)
+ * @return niveau d'analyse max
+ */
+unsigned int WorkSpace::getMaxAnalysisLevel()
+{
+    unsigned int l = 0, w = this->getWidth(), h = this->getHeight();
+
+    while ((w%2==0) && (h%2==0))
+    {
+        w/=2;
+        h/=2;
+        ++l;
+    }
+
+    return l;
 }
 
 /**

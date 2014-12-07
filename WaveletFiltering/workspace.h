@@ -39,17 +39,22 @@ public:
     void saveImage(QImage img, QString fileName);
     void swap();
     void setSelectedBlock(block_choice choice, unsigned int analysis_level);
-    QImage zoomEditor(struct block zoom_block, float** mat);
+    void setSelectedZoomedBlock(block_choice choice, unsigned int analysis_level,block fineZoomedBlock);
+//    QImage zoomEditor(struct block zoom_block, float** mat);
 
     QImage getSourceImage();
     QImage getInputDWTImage();
     QImage getOutputDWTImage();
     QImage getOutputFineImage();
-    QImage getImageFromMatrix(float** mat);
-    QImage getImageFromMatrix(float** mat, unsigned int mat_width, unsigned int mat_height);
+    QImage getImageFromFineMatrix(float** mat);
+    QImage getImageFromDWTMatrix(float** mat);
+    QImage getZoomedImageFromDWTMatrix(float** mat,struct block zoom_block);
+    void setImageFromMatrix_SC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
+    void setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
     unsigned int getWidth();
     unsigned int getHeight();
     unsigned int getCurrentAnalysisLevel();
+    unsigned int getMaxAnalysisLevel();
     float** getInputFineMatrix();
     float** getInputDWTMatrix();
     float** getOutputDWTMatrix();

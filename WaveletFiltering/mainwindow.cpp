@@ -225,6 +225,27 @@ void MainWindow::inputFineDisplayer()
 }
 
 /**
+  * @brief calcule le bloc visible dans l'image d'entrée fine
+  */
+block MainWindow::getFineZoomedBlock()
+{
+    WorkSpace* ws = WorkSpace::getInstance();
+    int zl_fine = this->getZoomLevelFine();
+    struct block zoom_block;
+
+    zoom_block.top_left_x = std::min<int>(this->input_fine_view->horizontalScrollBar()->value()/(zl_fine+1),
+                                     ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1)) ;
+
+    zoom_block.top_left_y = std::min<int>( this->input_fine_view->verticalScrollBar()->value()/(zl_fine+1),
+                                           ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1));
+
+    zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(zl_fine+1)) - 1;
+    zoom_block.bottom_right_y = (zoom_block.top_left_y + this->input_fine_view->height()/(zl_fine+1)) - 1;
+
+    return zoom_block;
+}
+
+/**
   * @brief Affiche la base de Haar
   */
 void MainWindow::inputDWTDisplayer()
@@ -238,12 +259,7 @@ void MainWindow::inputDWTDisplayer()
 
     if(!this->wavelets_spinbox->isEnabled())
     {
-        int max_value = 0;
-        for(unsigned int i = (ws->getHeight() < ws->getWidth())? ws->getHeight() : ws->getWidth(); i >= 2; i/=2)
-        {
-            max_value++;
-        }
-        this->wavelets_spinbox->setRange(0, max_value);
+        this->wavelets_spinbox->setRange(0, ws->getMaxAnalysisLevel());
         this->wavelets_spinbox->setValue(0);
         this->wavelets_spinbox->setEnabled(true);
     }
@@ -258,7 +274,7 @@ void MainWindow::inputDWTDisplayer()
      * * it works because input and pixmap are 512 x 512
      *
      * I tried to change the test to (zl_fine < 0) but then for zl_fine=0
-     * the second argument of std::min is negative and an error occurs.
+     * the second argument of std::min (in getFineZoomedBlock) is negative and an error occurs.
      * I don't understand the role of this second parameter.
      */
     if(zl_fine <= 0)
@@ -267,19 +283,7 @@ void MainWindow::inputDWTDisplayer()
 	}
 	else
 	{
-		struct block zoom_block;
-//        int a = this->input_fine_view->horizontalScrollBar()->value();
-//        int b = this->input_fine_view->width() ;
-        zoom_block.top_left_x = std::min<int>(this->input_fine_view->horizontalScrollBar()->value()/(zl_fine+1),
-                                         ws->getWidth() - 1 - this->input_fine_view->width()/(zl_fine+1)) ;
-
-        zoom_block.top_left_y = std::min<int>( this->input_fine_view->verticalScrollBar()->value()/(zl_fine+1),
-                                               ws->getHeight() - 1 - this->input_fine_view->height()/(zl_fine+1));
-
-        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->input_fine_view->width()/(zl_fine+1)) - 1;
-		zoom_block.bottom_right_y = (zoom_block.top_left_y + this->input_fine_view->height()/(zl_fine+1)) - 1;
-
-		this->input_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getInputDWTMatrix()));
+        this->input_DWT_map = QPixmap::fromImage(ws->getZoomedImageFromDWTMatrix(ws->getInputDWTMatrix(),this->getFineZoomedBlock()));
 	}
 
 	if(zl_DWT < 0)
@@ -313,17 +317,7 @@ void MainWindow::outputDWTDisplayer()
 	}
 	else
 	{
-		struct block zoom_block;
-        zoom_block.top_left_x = std::min<int>( this->output_fine_view->horizontalScrollBar()->value()/(zl_fine+1),
-                                               ws->getWidth() - 1 - this->output_fine_view->width()/(zl_fine+1));
-
-        zoom_block.top_left_y = std::min<int>(this->output_fine_view->verticalScrollBar()->value()/(zl_fine+1),
-                                              ws->getHeight() - 1 - this->output_fine_view->height()/(zl_fine+1));
-
-        zoom_block.bottom_right_x = (zoom_block.top_left_x + this->output_fine_view->width()/(zl_fine+1)) - 1;
-		zoom_block.bottom_right_y = (zoom_block.top_left_y + this->output_fine_view->height()/(zl_fine+1)) - 1;
-
-		this->output_DWT_map = QPixmap::fromImage(ws->zoomEditor(zoom_block, ws->getOutputDWTMatrix()));
+        this->output_DWT_map = QPixmap::fromImage(ws->getZoomedImageFromDWTMatrix(ws->getOutputDWTMatrix(),this->getFineZoomedBlock()));
 	}
 
 	if(zl_DWT < 0)
@@ -351,7 +345,7 @@ void MainWindow::outputFineDisplayer()
     this->action_swap->setEnabled(true);
     this->output_fine_scene->clear();
 
-    this-> output_fine_map = QPixmap::fromImage(ws->getOutputFineImage());
+    this->output_fine_map = QPixmap::fromImage(ws->getOutputFineImage());
 	if(this->getZoomLevelFine() >= 0) this->output_fine_map = this->output_fine_map.scaled(ws->getWidth()*(this->getZoomLevelFine()+1), ws->getHeight()*(this->getZoomLevelFine()+1));
 	else this->output_fine_map = this->output_fine_map.scaled(ws->getWidth()/(1-this->getZoomLevelFine()), ws->getHeight()/(1-this->getZoomLevelFine()));
 

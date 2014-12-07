@@ -84,6 +84,7 @@ private:
     void updateUI(status origin);
     void resetUI();
     void inputFineDisplayer();
+    block getFineZoomedBlock();
     void inputDWTDisplayer();
     void outputDWTDisplayer();
     void outputFineDisplayer();
