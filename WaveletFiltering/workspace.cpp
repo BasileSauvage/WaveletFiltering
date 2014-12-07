@@ -224,8 +224,7 @@ void WorkSpace::waveletSynthesis(float **mat, unsigned int width, unsigned int h
 }
 
 /**
- * @brief Transforme une matrice de coefficients en remplaçant ceux générés lors du dernier niveau d'analyse par 0
- * @param mat la matrice de coefficients sur laquelle appliquer la transformation
+ * @brief met à 0 les coefficients de détail du niveau le plus grossier
  */
 void WorkSpace::zeroFilter()
 {
