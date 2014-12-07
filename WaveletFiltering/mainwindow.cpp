@@ -28,10 +28,12 @@ void MainWindow::runUI()
     this->resize(1024, 800);
     this->setWindowTitle("Wavelet filtering");
 
+    /* création des menus */
     this->menu = new QMenuBar(this);
     this->menu_file = new QMenu("&Fichier", this);
     this->menu_transform = new QMenu("Transformation", this);
 
+    /* menu fichier */
     this->action_load = new QAction("Charger image", this);
 	this->action_load->setShortcut(QKeySequence("Ctrl+O"));
     this->action_save = new QAction("Sauvegarder résultat", this);
@@ -43,24 +45,29 @@ void MainWindow::runUI()
     this->action_quit = new QAction("Quitter", this);
 	this->action_quit->setShortcut(QKeySequence("Ctrl+Q"));
 
-    this->action_zero_filter = new QAction("Filtre zéro", this);
-
     this->menu_file->addAction(this->action_load);
     this->menu_file->addAction(this->action_save);
     this->menu_file->addAction(this->action_save_all);
     this->menu_file->addAction(this->action_swap);
     this->menu_file->addAction(this->action_quit);
+
+
+    /* menu transformations */
+    this->action_zero_filter = new QAction("Filtre zéro", this);
     this->menu_transform->addAction(this->action_zero_filter);
 
+    /* ajout des menus */
     this->menu->addMenu(this->menu_file);
     this->menu->addMenu(this->menu_transform);
     this->setMenuBar(this->menu);
 
+    /* désactivations dans les menus */
     this->action_save->setEnabled(false);
     this->action_save_all->setEnabled(false);
     this->action_swap->setEnabled(false);
     this->action_zero_filter->setEnabled(false);
 
+    /* init des parties graphiques */
     this->input_fine_scene = new QGraphicsScene(this);
     this->input_DWT_scene = new QGraphicsScene(this);
     this->output_DWT_scene = new QGraphicsScene(this);
@@ -79,7 +86,8 @@ void MainWindow::runUI()
     this->output_fine_view->setFixedSize(512, 512);
     this->output_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
 
-	this->zoom_level_fine = 0;
+    /* interface de manipulation des vues */
+    this->zoom_level_fine = 0;
 	this->zoom_level_DWT = 0;
 
 	this->zoom_label_fine = new QLabel(this);
