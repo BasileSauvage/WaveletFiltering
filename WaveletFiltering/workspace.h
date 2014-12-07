@@ -3,6 +3,9 @@
 
 #include <QImage>
 
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time */
+
 struct block
 {
     unsigned int top_left_x;
@@ -31,7 +34,8 @@ public:
     void waveletAnalysis(float** mat, unsigned int width, unsigned int height);
     void waveletSynthesis(float** mat, unsigned int width, unsigned int height);
     void updateOutputFineFromDWT();
-    void zeroFilter();
+    void filterVanishCoarseDetails();
+    void filterRandomCoarseDetails();
     void saveImage(QImage img, QString fileName);
     void swap();
     void setSelectedBlock(block_choice choice, unsigned int analysis_level);

@@ -226,7 +226,7 @@ void WorkSpace::waveletSynthesis(float **mat, unsigned int width, unsigned int h
 /**
  * @brief met à 0 les coefficients de détail du niveau le plus grossier
  */
-void WorkSpace::zeroFilter()
+void WorkSpace::filterVanishCoarseDetails()
 {
     this->setSelectedBlock(DIAGONAL, this->getCurrentAnalysisLevel());
     for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
@@ -250,6 +250,41 @@ void WorkSpace::zeroFilter()
         for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
         {
             this->output_DWT_matrix[i][j] = 0;
+        }
+    }
+
+    this->output_DWT_img = this->getImageFromMatrix(this->getOutputDWTMatrix());
+}
+
+/**
+ * @brief met des valeurs aléatoires aux coefficients de détail du niveau le plus grossier
+ */
+void WorkSpace::filterRandomCoarseDetails()
+{
+    srand (time(NULL));
+
+    this->setSelectedBlock(DIAGONAL, this->getCurrentAnalysisLevel());
+    for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
+    {
+        for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
+        {
+            this->output_DWT_matrix[i][j] = (rand() % 256) - 127.5;
+        }
+    }
+    this->setSelectedBlock(HORIZONTAL, this->getCurrentAnalysisLevel());
+    for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
+    {
+        for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
+        {
+            this->output_DWT_matrix[i][j] = (rand() % 256) - 127.5;
+        }
+    }
+    this->setSelectedBlock(VERTICAL, this->getCurrentAnalysisLevel());
+    for(unsigned int i = getSelectedBlock().top_left_x; i < getSelectedBlock().bottom_right_x + 1; i++)
+    {
+        for(unsigned int j = getSelectedBlock().top_left_y; j < getSelectedBlock().bottom_right_y + 1; j++)
+        {
+            this->output_DWT_matrix[i][j] = (rand() % 256) - 127.5;
         }
     }
 

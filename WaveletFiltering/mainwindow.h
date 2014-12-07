@@ -69,7 +69,9 @@ public:
     QAction* action_save_all;
     QAction* action_swap;
     QAction* action_quit;
-    QAction* action_zero_filter;
+
+    QAction* filter_vanish_coarse_details;
+    QAction* filter_random_coarse_details;
 
 	int getZoomLevelFine();
 	int getZoomLevelDWT();
@@ -95,7 +97,8 @@ public slots:
     void actionSave();
     void actionSaveAll();
     void actionSwap();
-    void actionZeroFilter();
+    void filterVanishCoarseDetails();
+    void filterRandomCoarseDetails();
     void updateFineHorizontalScrollBar(int val);
     void updateFineVerticalScrollBar(int val);
     void updateDWTHorizontalScrollBar(int val);

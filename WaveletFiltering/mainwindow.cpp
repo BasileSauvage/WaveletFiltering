@@ -53,8 +53,10 @@ void MainWindow::runUI()
 
 
     /* menu transformations */
-    this->action_zero_filter = new QAction("Filtre zéro", this);
-    this->menu_transform->addAction(this->action_zero_filter);
+    this->filter_vanish_coarse_details = new QAction("Vanish coarse details", this);
+    this->menu_transform->addAction(this->filter_vanish_coarse_details);
+    this->filter_random_coarse_details = new QAction("Random coarse details", this);
+    this->menu_transform->addAction(this->filter_random_coarse_details);
 
     /* ajout des menus */
     this->menu->addMenu(this->menu_file);
@@ -65,7 +67,8 @@ void MainWindow::runUI()
     this->action_save->setEnabled(false);
     this->action_save_all->setEnabled(false);
     this->action_swap->setEnabled(false);
-    this->action_zero_filter->setEnabled(false);
+    this->filter_vanish_coarse_details->setEnabled(false);
+    this->filter_random_coarse_details->setEnabled(false);
 
     /* init des parties graphiques */
     this->input_fine_scene = new QGraphicsScene(this);
@@ -184,7 +187,8 @@ void MainWindow::resetUI()
     this->action_save->setEnabled(false);
     this->action_save_all->setEnabled(false);
     this->action_swap->setEnabled(false);
-    this->action_zero_filter->setEnabled(false);
+    this->filter_vanish_coarse_details->setEnabled(false);
+    this->filter_random_coarse_details->setEnabled(false);
 
 	this->zoom_level_fine = 0;
 	this->zoom_level_DWT = 0;
@@ -228,7 +232,8 @@ void MainWindow::inputDWTDisplayer()
     WorkSpace* ws = WorkSpace::getInstance();
 
 	this->zoom_slider_DWT->setEnabled(true);
-	this->action_zero_filter->setEnabled(true);
+    this->filter_vanish_coarse_details->setEnabled(true);
+    this->filter_random_coarse_details->setEnabled(true);
     this->input_DWT_scene->clear();
 
     if(!this->wavelets_spinbox->isEnabled())
@@ -367,7 +372,8 @@ void MainWindow::connectActions()
     QObject::connect(this->action_save_all, SIGNAL(triggered()), this, SLOT(actionSaveAll()));
     QObject::connect(this->action_swap, SIGNAL(triggered()), this, SLOT(actionSwap()));
     QObject::connect(this->action_quit, SIGNAL(triggered()), this, SLOT(close()));
-    QObject::connect(this->action_zero_filter, SIGNAL(triggered()), this, SLOT(actionZeroFilter()));
+    QObject::connect(this->filter_vanish_coarse_details, SIGNAL(triggered()), this, SLOT(filterVanishCoarseDetails()));
+    QObject::connect(this->filter_random_coarse_details, SIGNAL(triggered()), this, SLOT(filterRandomCoarseDetails()));
     QObject::connect(this->input_fine_view->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateFineHorizontalScrollBar(int)));
     QObject::connect(this->input_fine_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateFineVerticalScrollBar(int)));
     QObject::connect(this->output_fine_view->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateFineHorizontalScrollBar(int)));
@@ -468,12 +474,24 @@ void MainWindow::actionSwap()
 }
 
 /**
-  * @brief Slot qui appliquer le "filtre zéro" sur l'image
+  * @brief Slot qui appliquer le filtre "Vanish coarse details"
   */
-void MainWindow::actionZeroFilter()
+void MainWindow::filterVanishCoarseDetails()
 {
     WorkSpace* ws = WorkSpace::getInstance();
-    ws->zeroFilter();
+    ws->filterVanishCoarseDetails();
+    ws->updateOutputFineFromDWT();
+
+    this->updateUI(OUTPUT);
+}
+
+/**
+  * @brief Slot qui appliquer le filtre "random coarse details"
+  */
+void MainWindow::filterRandomCoarseDetails()
+{
+    WorkSpace* ws = WorkSpace::getInstance();
+    ws->filterRandomCoarseDetails();
     ws->updateOutputFineFromDWT();
 
     this->updateUI(OUTPUT);
