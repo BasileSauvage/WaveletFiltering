@@ -79,15 +79,23 @@ void MainWindow::runUI()
     this->input_fine_view = new QGraphicsView(this->input_fine_scene,this);
     this->input_fine_view->setFixedSize(512, 512);
     this->input_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
-    this->input_DWT_view = new QGraphicsView(this->input_DWT_scene,this);
+	this->input_fine_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->input_fine_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->input_DWT_view = new QGraphicsView(this->input_DWT_scene,this);
     this->input_DWT_view->setFixedSize(512, 512);
     this->input_DWT_view->setDragMode(QGraphicsView::ScrollHandDrag);
-    this->output_DWT_view = new QGraphicsView(this->output_DWT_scene,this);
+	this->input_DWT_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->input_DWT_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->output_fine_view = new QGraphicsView(this->output_fine_scene,this);
+	this->output_fine_view->setFixedSize(512, 512);
+	this->output_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
+	this->output_fine_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->output_fine_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->output_DWT_view = new QGraphicsView(this->output_DWT_scene,this);
     this->output_DWT_view->setFixedSize(512, 512);
     this->output_DWT_view->setDragMode(QGraphicsView::ScrollHandDrag);
-    this->output_fine_view = new QGraphicsView(this->output_fine_scene,this);
-    this->output_fine_view->setFixedSize(512, 512);
-    this->output_fine_view->setDragMode(QGraphicsView::ScrollHandDrag);
+	this->output_DWT_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	this->output_DWT_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     /* interface de manipulation des vues */
     this->zoom_level_fine = 0;
