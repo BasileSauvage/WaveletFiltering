@@ -102,12 +102,14 @@ void MainWindow::runUI()
 	this->zoom_slider_fine->setRange(-3, 9);
 	this->zoom_slider_fine->setValue(this->getZoomLevelFine());
 	this->zoom_slider_fine->setTickInterval(1);
+	this->zoom_slider_fine->setPageStep(1);
 	this->zoom_slider_fine->setEnabled(false);
 
 	this->zoom_slider_DWT = new QSlider(Qt::Vertical, this);
 	this->zoom_slider_DWT->setRange(-3, 9);
 	this->zoom_slider_DWT->setValue(this->getZoomLevelDWT());
 	this->zoom_slider_DWT->setTickInterval(1);
+	this->zoom_slider_DWT->setPageStep(1);
 	this->zoom_slider_DWT->setEnabled(false);
 
 	this->wavelets_label = new QLabel(this);
