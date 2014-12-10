@@ -94,7 +94,8 @@ public slots:
 	void zoomModifierFine(int val);
 	void zoomModifierDWT(int val);
 	void analysisModifier(int val);
-    void actionLoad();
+	void synchroModifier();
+	void actionLoad();
     void actionSave();
     void actionSaveAll();
     void actionSwap();

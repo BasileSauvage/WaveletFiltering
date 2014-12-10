@@ -279,7 +279,7 @@ void MainWindow::inputDWTDisplayer()
      * the second argument of std::min (in getFineZoomedBlock) is negative and an error occurs.
      * I don't understand the role of this second parameter.
      */
-    if(zl_fine <= 0)
+	if(zl_fine <= 0 || not this->synchro_checkbox->isChecked())
     {
 		this->input_DWT_map = QPixmap::fromImage(ws->getInputDWTImage());
 	}
@@ -313,7 +313,7 @@ void MainWindow::outputDWTDisplayer()
 	int zl_fine = this->getZoomLevelFine();
 	int zl_DWT = this->getZoomLevelDWT();
 
-	if(zl_fine <= 0)
+	if(zl_fine <= 0 || not this->synchro_checkbox->isChecked())
 	{
 		this->output_DWT_map = QPixmap::fromImage(ws->getOutputDWTImage());
 	}
@@ -363,7 +363,9 @@ void MainWindow::connectActions()
 	QObject::connect(this->zoom_slider_fine, SIGNAL(valueChanged(int)), this, SLOT(zoomModifierFine(int)));
 	QObject::connect(this->zoom_slider_DWT, SIGNAL(valueChanged(int)), this, SLOT(zoomModifierDWT(int)));
 	QObject::connect(this->wavelets_spinbox, SIGNAL(valueChanged(int)), this, SLOT(analysisModifier(int)));
-    QObject::connect(this->action_load, SIGNAL(triggered()), this, SLOT(actionLoad()));
+	QObject::connect(this->wavelets_spinbox, SIGNAL(stepUp()), this, SLOT(analysisModifier(int)));
+	QObject::connect(this->synchro_checkbox, SIGNAL(stateChanged(int)), this, SLOT(synchroModifier()));
+	QObject::connect(this->action_load, SIGNAL(triggered()), this, SLOT(actionLoad()));
     QObject::connect(this->action_save, SIGNAL(triggered()), this, SLOT(actionSave()));
     QObject::connect(this->action_save_all, SIGNAL(triggered()), this, SLOT(actionSaveAll()));
     QObject::connect(this->action_swap, SIGNAL(triggered()), this, SLOT(actionSwap()));
@@ -412,6 +414,15 @@ void MainWindow::analysisModifier(int val)
 
     this->updateUI(DWT);
 }
+
+/**
+  * @brief Slot qui va gérer la synchro ON/OFF pour la visu
+  */
+void MainWindow::synchroModifier()
+{
+	this->updateUI(DWT);
+}
+
 
 /**
   * @brief Slot qui va charger l'image sur laquelle travailler
