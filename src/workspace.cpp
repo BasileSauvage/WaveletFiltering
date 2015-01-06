@@ -8,7 +8,11 @@
 WorkSpace::WorkSpace(QImage img)
 {
 	this->input_fine_img = img.convertToFormat(QImage::Format_ARGB32);
-    this->current_analysis_level = 0;
+	this->input_DWT_img = this->input_fine_img;
+	this->output_DWT_img = this->input_fine_img;
+	this->output_fine_img = this->input_fine_img;
+
+	this->current_analysis_level = 0;
 
     this->input_fine_matrix = new float* [img.width()];
     this->input_DWT_matrix = new float* [img.width()];
@@ -38,10 +42,6 @@ WorkSpace::WorkSpace(QImage img)
             output_fine_matrix[i][j] = qGray(img.pixel(i,j));
         }
     }
-
-    this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
-    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
-    this->output_fine_img = this->getImageFromFineMatrix(this->getOutputFineMatrix());
 }
 
 /**
@@ -139,8 +139,8 @@ void WorkSpace::waveletTransform(unsigned int target_level)
     }
 
     this->current_analysis_level = target_level;
-    this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
-    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
+	setImageFromDWTMatrix(this->getInputDWTMatrix(),this->input_DWT_img);
+	setImageFromDWTMatrix(this->getOutputDWTMatrix(),this->output_DWT_img);
 }
 
 /**
@@ -253,7 +253,7 @@ void WorkSpace::filterVanishCoarseDetails()
         }
     }
 
-    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
+	setImageFromDWTMatrix(this->getOutputDWTMatrix(),this->output_DWT_img);
 }
 
 /**
@@ -288,7 +288,7 @@ void WorkSpace::filterRandomCoarseDetails()
         }
     }
 
-    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
+	setImageFromDWTMatrix(this->getOutputDWTMatrix(),this->output_DWT_img);
 }
 
 /**
@@ -306,7 +306,7 @@ void WorkSpace::updateOutputFineFromDWT()
         this->waveletSynthesis(this->getOutputFineMatrix(), width, height);
     }
 
-    this->output_fine_img = this->getImageFromDWTMatrix(this->getOutputFineMatrix());
+	setImageFromDWTMatrix(this->getOutputFineMatrix(),this->output_fine_img);
 }
 
 /**
@@ -314,37 +314,31 @@ void WorkSpace::updateOutputFineFromDWT()
  * @param img l'image à sauvegarder
  * @param fileName le nom de l'image
  */
-void WorkSpace::saveImage(QImage img, QString fileName)
+void WorkSpace::saveImage(const QImage& img, QString fileName)
 {
     img.save(fileName, 0, 100);
 }
 
 /**
  * @brief Transforme une matrice de coefficients fins en QImage
- * @param mat la matrice de coefficients à convertir
- * @return QImage
+ * @param mat la matrice de coefficients à convertir, img la Qimage
  */
-QImage WorkSpace::getImageFromFineMatrix(float** mat)
+void WorkSpace::setImageFromFineMatrix(float** mat, QImage & img)
 {
-    QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
     this->setSelectedBlock(LOWRES,0);
     this->setImageFromMatrix_SC_in_block(mat,img);
-    return img;
 }
 
 /**
  * @brief Transforme une matrice de DWT en QImage
- * @param mat la matrice de coefficients à convertir
- * @return QImage
+ * @param mat la matrice de coefficients à convertir, img la Qimage
  */
-QImage WorkSpace::getImageFromDWTMatrix(float** mat)
+void WorkSpace::setImageFromDWTMatrix(float** mat, QImage & img)
 {
-    QImage img(this->getWidth(), this->getHeight(), QImage::Format_ARGB32);
     this->setSelectedBlock(LOWRES,0);
     this->setImageFromMatrix_WC_in_block(mat,img);
     this->setSelectedBlock(LOWRES,this->getCurrentAnalysisLevel());
     this->setImageFromMatrix_SC_in_block(mat,img);
-    return img;
 }
 
 /**
@@ -441,9 +435,9 @@ void WorkSpace::swap()
             output_DWT_matrix[i][j] = output_fine_matrix[i][j];
         }
     }
-	this->input_fine_img = this->getImageFromFineMatrix(this->getInputFineMatrix());
-    this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
-    this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
+	setImageFromFineMatrix(this->getInputFineMatrix(),this->input_fine_img);
+	setImageFromDWTMatrix(this->getInputDWTMatrix(),this->input_DWT_img);
+	setImageFromDWTMatrix(this->getOutputDWTMatrix(),this->output_DWT_img);
 
     this->current_analysis_level = 0;
 
@@ -625,7 +619,7 @@ void WorkSpace::setSelectedZoomedBlock(block_choice choice, unsigned int analysi
  * @brief Renvoie l'image source
  * @return image source
  */
-QImage WorkSpace::getInputFineImage()
+QImage& WorkSpace::getInputFineImage()
 {
 	return this->input_fine_img;
 }
@@ -634,7 +628,7 @@ QImage WorkSpace::getInputFineImage()
  * @brief Renvoie l'image de la transformée en ondelettes de la source
  * @return image DWT input
  */
-QImage WorkSpace::getInputDWTImage()
+QImage& WorkSpace::getInputDWTImage()
 {
     return this->input_DWT_img;
 }
@@ -643,7 +637,7 @@ QImage WorkSpace::getInputDWTImage()
  * @brief Renvoie l'image de la transformée en ondelettes de la sortie
  * @return image DWT output
  */
-QImage WorkSpace::getOutputDWTImage()
+QImage& WorkSpace::getOutputDWTImage()
 {
     return this->output_DWT_img;
 }
@@ -652,9 +646,45 @@ QImage WorkSpace::getOutputDWTImage()
  * @brief Renvoie l'image de sortie
  * @return image sortie
  */
-QImage WorkSpace::getOutputFineImage()
+QImage& WorkSpace::getOutputFineImage()
 {
     return this->output_fine_img;
+}
+
+/**
+ * @brief Renvoie l'image source
+ * @return image source
+ */
+const QImage& WorkSpace::getInputFineImage() const
+{
+	return this->input_fine_img;
+}
+
+/**
+ * @brief Renvoie l'image de la transformée en ondelettes de la source
+ * @return image DWT input
+ */
+const QImage& WorkSpace::getInputDWTImage() const
+{
+	return this->input_DWT_img;
+}
+
+/**
+ * @brief Renvoie l'image de la transformée en ondelettes de la sortie
+ * @return image DWT output
+ */
+const QImage& WorkSpace::getOutputDWTImage() const
+{
+	return this->output_DWT_img;
+}
+
+/**
+ * @brief Renvoie l'image de sortie
+ * @return image sortie
+ */
+const QImage& WorkSpace::getOutputFineImage() const
+{
+	return this->output_fine_img;
 }
 
 /**

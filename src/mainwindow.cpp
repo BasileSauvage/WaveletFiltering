@@ -471,10 +471,10 @@ void MainWindow::actionSaveAll()
     information.setText("Sauvegarde des images dans le répertoire ../Images");
     information.setWindowTitle("Information");
     information.exec();
-	ws->saveImage(ws->getInputFineImage(), "../Images/input_fine.jpg");
-    ws->saveImage(ws->getInputDWTImage(), "../Images/input_DWT.jpg");
-    ws->saveImage(ws->getOutputDWTImage(), "../Images/output_DWT.jpg");
-    ws->saveImage(ws->getOutputFineImage(), "../Images/output_fine.jpg");
+	ws->saveImage(ws->getInputFineImage(), "../Images/input_fine.png");
+	ws->saveImage(ws->getInputDWTImage(), "../Images/input_DWT.png");
+	ws->saveImage(ws->getOutputDWTImage(), "../Images/output_DWT.png");
+	ws->saveImage(ws->getOutputFineImage(), "../Images/output_fine.png");
 }
 
 /**

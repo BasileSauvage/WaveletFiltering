@@ -36,18 +36,24 @@ public:
     void updateOutputFineFromDWT();
     void filterVanishCoarseDetails();
     void filterRandomCoarseDetails();
-    void saveImage(QImage img, QString fileName);
+	void saveImage(const QImage& img, QString fileName);
     void swap();
     void setSelectedBlock(block_choice choice, unsigned int analysis_level);
     void setSelectedZoomedBlock(block_choice choice, unsigned int analysis_level,block fineZoomedBlock);
 //    QImage zoomEditor(struct block zoom_block, float** mat);
 
-	QImage getInputFineImage();
-    QImage getInputDWTImage();
-    QImage getOutputDWTImage();
-    QImage getOutputFineImage();
-    QImage getImageFromFineMatrix(float** mat);
-    QImage getImageFromDWTMatrix(float** mat);
+	QImage& getInputFineImage();
+	QImage& getInputDWTImage();
+	QImage& getOutputDWTImage();
+	QImage& getOutputFineImage();
+	const QImage& getInputFineImage() const;
+	const QImage& getInputDWTImage() const;
+	const QImage& getOutputDWTImage() const;
+	const QImage& getOutputFineImage() const;
+
+	void setImageFromFineMatrix(float** mat, QImage & img);
+	void setImageFromDWTMatrix(float** mat, QImage & img);
+
     QImage getZoomedImageFromDWTMatrix(float** mat,struct block zoom_block);
     void setImageFromMatrix_SC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
     void setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
