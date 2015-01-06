@@ -194,11 +194,11 @@ void MainWindow::resetUI()
     this->output_DWT_scene->clear();
     this->output_fine_scene->clear();
 
-    this->action_save->setEnabled(false);
-    this->action_save_all->setEnabled(false);
-    this->action_swap->setEnabled(false);
-    this->filter_vanish_coarse_details->setEnabled(false);
-    this->filter_random_coarse_details->setEnabled(false);
+//    this->action_save->setEnabled(false);
+//    this->action_save_all->setEnabled(false);
+//    this->action_swap->setEnabled(false);
+//    this->filter_vanish_coarse_details->setEnabled(false);
+//    this->filter_random_coarse_details->setEnabled(false);
 
 	this->zoom_level_fine = 0;
 	this->zoom_level_DWT = 0;
@@ -485,7 +485,7 @@ void MainWindow::actionSwap()
     WorkSpace* ws = WorkSpace::getInstance();
     ws->swap();
 
-    this->resetUI();
+	this->updateUI(ALL);
 }
 
 /**

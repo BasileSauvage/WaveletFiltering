@@ -101,7 +101,7 @@ WorkSpace* WorkSpace::instance = 0;
  */
 void WorkSpace::copyMatrix(float **src, float **dest)
 {
-    for(unsigned int j = 0; j < this->getHeight(); j++) // On remplit la matrice avec les niveaux de gris de l'image source
+	for(unsigned int j = 0; j < this->getHeight(); j++)
     {
         for(unsigned int i = 0; i < this->getWidth(); i++)
         {
@@ -426,20 +426,24 @@ void WorkSpace::setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shif
  */
 void WorkSpace::swap()
 {
-    for(unsigned int i = 0; i < this->getWidth(); i++)
-    {
-        for(unsigned int j = 0; j < this->getHeight(); j++)
-        {
-            input_fine_matrix[i][j] = output_fine_matrix[i][j];
-            input_DWT_matrix[i][j] = output_fine_matrix[i][j];
-            output_DWT_matrix[i][j] = output_fine_matrix[i][j];
-        }
-    }
+	copyMatrix(output_fine_matrix,input_fine_matrix);
+	copyMatrix(output_DWT_matrix,input_DWT_matrix);
+
+//    for(unsigned int i = 0; i < this->getWidth(); i++)
+//    {
+//        for(unsigned int j = 0; j < this->getHeight(); j++)
+//        {
+//            input_fine_matrix[i][j] = output_fine_matrix[i][j];
+//            input_DWT_matrix[i][j] = output_fine_matrix[i][j];
+//            output_DWT_matrix[i][j] = output_fine_matrix[i][j];
+//        }
+//    }
+
 	setImageFromFineMatrix(this->getInputFineMatrix(),this->input_fine_img);
 	setImageFromDWTMatrix(this->getInputDWTMatrix(),this->input_DWT_img);
 	setImageFromDWTMatrix(this->getOutputDWTMatrix(),this->output_DWT_img);
 
-    this->current_analysis_level = 0;
+//    this->current_analysis_level = 0;
 
     this->selected_block.top_left_x = 0;
     this->selected_block.top_left_y = 0;
