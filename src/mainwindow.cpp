@@ -200,30 +200,23 @@ void MainWindow::resetUI()
 //    this->filter_vanish_coarse_details->setEnabled(false);
 //    this->filter_random_coarse_details->setEnabled(false);
 
-	this->zoom_slider_DWT->setEnabled(true);
 	this->filter_vanish_coarse_details->setEnabled(true);
 	this->filter_random_coarse_details->setEnabled(true);
 
-	if(!this->wavelets_spinbox->isEnabled())
-	{
-		WorkSpace* ws = WorkSpace::getInstance();
-		this->wavelets_spinbox->setRange(0, ws->getMaxAnalysisLevel());
-		this->wavelets_spinbox->setValue(0);
-		this->wavelets_spinbox->setEnabled(true);
-	}
+	WorkSpace* ws = WorkSpace::getInstance();
+	this->wavelets_spinbox->setRange(0, ws->getMaxAnalysisLevel());
+	this->wavelets_spinbox->setValue(0);
+	this->wavelets_spinbox->setEnabled(true);
 
 	this->zoom_level_fine = 0;
-	this->zoom_level_DWT = 0;
-
 	this->zoom_label_fine->setText("zoom * " + QString::number(this->getZoomLevelFine()+1));
 	this->zoom_slider_fine->setValue(this->getZoomLevelFine());
-	this->zoom_slider_fine->setEnabled(false);
+	this->zoom_slider_fine->setEnabled(true);
 
+	this->zoom_level_DWT = 0;
 	this->zoom_label_DWT->setText("zoom * " + QString::number(this->getZoomLevelDWT()+1));
 	this->zoom_slider_DWT->setValue(this->getZoomLevelDWT());
-	this->zoom_slider_DWT->setEnabled(false);
-
-    this->wavelets_spinbox->setEnabled(false);
+	this->zoom_slider_DWT->setEnabled(true);
 
     this->updateUI(ALL);
 }
@@ -235,7 +228,6 @@ void MainWindow::inputFineDisplayer()
 {
     WorkSpace* ws = WorkSpace::getInstance();
 
-	this->zoom_slider_fine->setEnabled(true);
     this->input_fine_scene->clear();
 
 	this->input_fine_map = QPixmap::fromImage(ws->getInputFineImage());
