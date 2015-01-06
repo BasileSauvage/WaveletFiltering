@@ -287,7 +287,8 @@ void MainWindow::inputDWTDisplayer()
 	}
 	else
 	{
-        this->input_DWT_map = QPixmap::fromImage(ws->getZoomedImageFromDWTMatrix(ws->getInputDWTMatrix(),this->getFineZoomedBlock()));
+		ws->setZoomedImageFromDWTMatrix(ws->getInputDWTMatrix(),this->getFineZoomedBlock(),ws->getInputDWTImage());
+		this->input_DWT_map = QPixmap::fromImage(ws->getInputDWTImage());
 	}
 
 	if(zl_DWT < 0)
@@ -321,7 +322,8 @@ void MainWindow::outputDWTDisplayer()
 	}
 	else
 	{
-        this->output_DWT_map = QPixmap::fromImage(ws->getZoomedImageFromDWTMatrix(ws->getOutputDWTMatrix(),this->getFineZoomedBlock()));
+		ws->setZoomedImageFromDWTMatrix(ws->getOutputDWTMatrix(),this->getFineZoomedBlock(),ws->getOutputDWTImage());
+		this->output_DWT_map = QPixmap::fromImage(ws->getOutputDWTImage());
 	}
 
 	if(zl_DWT < 0)

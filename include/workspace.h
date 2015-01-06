@@ -54,7 +54,7 @@ public:
 	void setImageFromFineMatrix(float** mat, QImage & img);
 	void setImageFromDWTMatrix(float** mat, QImage & img);
 
-    QImage getZoomedImageFromDWTMatrix(float** mat,struct block zoom_block);
+	void setZoomedImageFromDWTMatrix(float** mat,struct block zoom_block, QImage& img);
     void setImageFromMatrix_SC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
     void setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
     unsigned int getWidth();
