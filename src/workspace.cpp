@@ -7,7 +7,7 @@
   */
 WorkSpace::WorkSpace(QImage img)
 {
-    this->source = img.convertToFormat(QImage::Format_ARGB32);
+	this->input_fine_img = img.convertToFormat(QImage::Format_ARGB32);
     this->current_analysis_level = 0;
 
     this->input_fine_matrix = new float* [img.width()];
@@ -441,7 +441,7 @@ void WorkSpace::swap()
             output_DWT_matrix[i][j] = output_fine_matrix[i][j];
         }
     }
-    this->source = this->getImageFromFineMatrix(this->getInputFineMatrix());
+	this->input_fine_img = this->getImageFromFineMatrix(this->getInputFineMatrix());
     this->input_DWT_img = this->getImageFromDWTMatrix(this->getInputDWTMatrix());
     this->output_DWT_img = this->getImageFromDWTMatrix(this->getOutputDWTMatrix());
 
@@ -625,9 +625,9 @@ void WorkSpace::setSelectedZoomedBlock(block_choice choice, unsigned int analysi
  * @brief Renvoie l'image source
  * @return image source
  */
-QImage WorkSpace::getSourceImage()
+QImage WorkSpace::getInputFineImage()
 {
-    return this->source;
+	return this->input_fine_img;
 }
 
 /**
@@ -663,7 +663,7 @@ QImage WorkSpace::getOutputFineImage()
  */
 unsigned int WorkSpace::getWidth()
 {
-    return this->getSourceImage().width();
+	return this->getInputFineImage().width();
 }
 
 /**
@@ -672,7 +672,7 @@ unsigned int WorkSpace::getWidth()
  */
 unsigned int WorkSpace::getHeight()
 {
-    return this->getSourceImage().height();
+	return this->getInputFineImage().height();
 }
 
 /**

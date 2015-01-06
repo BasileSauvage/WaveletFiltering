@@ -42,7 +42,7 @@ public:
     void setSelectedZoomedBlock(block_choice choice, unsigned int analysis_level,block fineZoomedBlock);
 //    QImage zoomEditor(struct block zoom_block, float** mat);
 
-    QImage getSourceImage();
+	QImage getInputFineImage();
     QImage getInputDWTImage();
     QImage getOutputDWTImage();
     QImage getOutputFineImage();
@@ -64,7 +64,7 @@ public:
 private:
     WorkSpace(QImage img); // constructeur privé à cause du singleton
     ~WorkSpace();
-    QImage source;
+	QImage input_fine_img;
     QImage input_DWT_img;
     QImage output_DWT_img;
     QImage output_fine_img;

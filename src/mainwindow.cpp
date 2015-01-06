@@ -226,7 +226,7 @@ void MainWindow::inputFineDisplayer()
 	this->zoom_slider_fine->setEnabled(true);
     this->input_fine_scene->clear();
 
-    this->input_fine_map = QPixmap::fromImage(ws->getSourceImage());
+	this->input_fine_map = QPixmap::fromImage(ws->getInputFineImage());
 	if(this->getZoomLevelFine() >= 0) this->input_fine_map = this->input_fine_map.scaled(ws->getWidth()*(this->getZoomLevelFine()+1), ws->getHeight()*(this->getZoomLevelFine()+1));
 	else this->input_fine_map = this->input_fine_map.scaled(ws->getWidth()/(1-this->getZoomLevelFine()), ws->getHeight()/(1-this->getZoomLevelFine()));
 
@@ -441,8 +441,8 @@ void MainWindow::actionLoad()
 
     if(fileName != 0 && fileName.length() > 0)
     {
-        QImage source(fileName);
-        WorkSpace::newInstance(source);
+		QImage input_fine_img(fileName);
+		WorkSpace::newInstance(input_fine_img);
         this->resetUI();
     }
 }
@@ -471,7 +471,7 @@ void MainWindow::actionSaveAll()
     information.setText("Sauvegarde des images dans le répertoire ../Images");
     information.setWindowTitle("Information");
     information.exec();
-    ws->saveImage(ws->getSourceImage(), "../Images/input_fine.jpg");
+	ws->saveImage(ws->getInputFineImage(), "../Images/input_fine.jpg");
     ws->saveImage(ws->getInputDWTImage(), "../Images/input_DWT.jpg");
     ws->saveImage(ws->getOutputDWTImage(), "../Images/output_DWT.jpg");
     ws->saveImage(ws->getOutputFineImage(), "../Images/output_fine.jpg");
