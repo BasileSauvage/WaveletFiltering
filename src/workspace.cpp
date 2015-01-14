@@ -345,14 +345,35 @@ void WorkSpace::setImageFromDWTMatrix(float** mat, QImage & img)
  * @brief Transforme une matrice de DWT en QImage, en accord avec le zoom sur l'image fine
  * @param mat la matrice de coefficients à convertir
  * @param zoom_block le bloc visible au niveau fin
- * @return QImage
+ * @param img la QImage destination
  */
 
-QImage WorkSpace::getZoomedImageFromDWTMatrix(float** mat,struct block zoom_block)
+void WorkSpace::setZoomedImageFromDWTMatrix(float** mat,struct block zoom_block, QImage& img)
+{
+	// coefs d'ondelette
+	for(unsigned int l=1;  l <= getCurrentAnalysisLevel(); ++l)
+	{
+		this->setSelectedBlock(DIAGONAL, l);
+		this->setImageFromMatrix_WC_in_block(mat,img, zoom_block);
+
+		this->setSelectedBlock(HORIZONTAL, l);
+		this->setImageFromMatrix_WC_in_block(mat,img, zoom_block);
+
+		this->setSelectedBlock(VERTICAL, l);
+		this->setImageFromMatrix_WC_in_block(mat,img, zoom_block);
+	}
+
+	// coefs d'echelle
+	this->setSelectedBlock(LOWRES, this->getCurrentAnalysisLevel());
+	this->setImageFromMatrix_SC_in_block(mat,img, zoom_block);
+}
+
+/*
+void WorkSpace::setZoomedImageFromDWTMatrix(float** mat,struct block zoom_block, QImage& img)
 {
     unsigned int bw = 1 + zoom_block.bottom_right_x - zoom_block.top_left_x;
     unsigned int bh = 1 + zoom_block.bottom_right_y - zoom_block.top_left_y;
-    QImage img(bw, bh, QImage::Format_ARGB32);
+//    QImage img(bw, bh, QImage::Format_ARGB32);
 
     // coefs d'ondelette
     for(unsigned int l=1;  l <= getCurrentAnalysisLevel(); ++l)
@@ -375,8 +396,9 @@ QImage WorkSpace::getZoomedImageFromDWTMatrix(float** mat,struct block zoom_bloc
     this->setImageFromMatrix_SC_in_block(mat,img, -(int)this->getSelectedBlock().top_left_x, -(int)this->getSelectedBlock().top_left_y);
 
     // retour
-    return img;
+//    return img;
 }
+*/
 
 /**
  * @brief traduit le bloc sélectionné d'une matrice de coefficients d'échelle en QImage (simple conversion de réel vers niveau de gris)
@@ -399,7 +421,7 @@ void WorkSpace::setImageFromMatrix_SC_in_block(float** mat,QImage& img, int shif
 }
 
 /**
- * @brief traduit le bloc sélectionné d'une matrice de coefficients d'ondelette en QImage (simple conversion de réel vers niveau de gris)
+ * @brief traduit le bloc sélectionné d'une matrice de coefficients d'ondelette en QImage
  * @param mat la matrice de coefficients à convertir
  * @param img la QImage destination
  * @param shift_x décallage du bloc destination sur l'axe x
@@ -419,6 +441,80 @@ void WorkSpace::setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shif
             img.setPixel(i+shift_x, j+shift_y, qRgb(r,0,b));
         }
     }
+}
+
+
+/**
+ * @brief remplit le bloc b=this->getSelectedBlock() dans img en zoomant dans b dans mat, comme fine_zoom_block dans l'image fine
+ * @param mat la matrice de coefficients à convertir
+ * @param img la QImage destination
+ * @param fine_zoom_block : le bloc zoomé dans l'image fine
+ */
+void WorkSpace::setImageFromMatrix_SC_in_block(float** mat,QImage& img, struct block fine_zoom_block)
+{
+	const int tlx = getSelectedBlock().top_left_x;
+	const int tly = getSelectedBlock().top_left_y;
+	const int brx = getSelectedBlock().bottom_right_x;
+	const int bry = getSelectedBlock().bottom_right_y;
+
+	const int bw = 1 + fine_zoom_block.bottom_right_x - fine_zoom_block.top_left_x;
+	const int bh = 1 + fine_zoom_block.bottom_right_y - fine_zoom_block.top_left_y;
+
+	const int imw = getWidth();
+	const int imh = getHeight();
+
+	const int shx = fine_zoom_block.top_left_x * (brx-tlx+1) / imw ;
+	const int shy = fine_zoom_block.top_left_y * (bry-tly+1) / imh ;
+
+	for(int i = tlx; i <= brx; i++)
+	{
+		for(int j = tly; j <= bry; j++)
+		{
+			const int imat = (i-tlx)*bw/imw + shx + tlx;
+			const int jmat = (j-tly)*bh/imh + shy + tly;
+			const int v = mat[imat][jmat];
+			img.setPixel(i, j, qRgb(v,v,v));
+		}
+	}
+}
+
+/**
+ * @brief remplit le bloc b=this->getSelectedBlock() dans img en zoomant dans b dans mat, comme fine_zoom_block dans l'image fine
+ * @param mat la matrice de coefficients à convertir
+ * @param img la QImage destination
+ * @param fine_zoom_block : le bloc zoomé dans l'image fine
+ */
+void WorkSpace::setImageFromMatrix_WC_in_block(float** mat,QImage& img, struct block fine_zoom_block)
+{
+	const int tlx = getSelectedBlock().top_left_x;
+	const int tly = getSelectedBlock().top_left_y;
+	const int brx = getSelectedBlock().bottom_right_x;
+	const int bry = getSelectedBlock().bottom_right_y;
+
+	const int bw = 1 + fine_zoom_block.bottom_right_x - fine_zoom_block.top_left_x;
+	const int bh = 1 + fine_zoom_block.bottom_right_y - fine_zoom_block.top_left_y;
+
+	const int imw = getWidth();
+	const int imh = getHeight();
+
+	const int shx = fine_zoom_block.top_left_x * (brx-tlx+1) / imw ;
+	const int shy = fine_zoom_block.top_left_y * (bry-tly+1) / imh ;
+
+	for(int i = tlx; i <= brx; i++)
+	{
+		for(int j = tly; j <= bry; j++)
+		{
+			const int imat = (i-tlx)*bw/imw + shx + tlx;
+			const int jmat = (j-tly)*bh/imh + shy + tly;
+			const int v = mat[imat][jmat];
+			//            int v = std::fabs(mat[imat][jmat]); // abs value, 0 is black, +/-255 is white
+			//            int v = (mat[imat][jmat]+255.f)/2.f; // -255 is black, 0 is grey,  +255 is white
+			//            img.setPixel(i, j, qRgb(v,v,v));
+			int r = std::max<float>(0,2.0f*v);
+			int b = std::max<float>(0,-2.0f*v);
+			img.setPixel(i, j, qRgb(r,0,b));
+		}
+	}
 }
 
 /**

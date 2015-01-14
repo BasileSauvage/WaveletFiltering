@@ -57,7 +57,9 @@ public:
 	void setZoomedImageFromDWTMatrix(float** mat,struct block zoom_block, QImage& img);
     void setImageFromMatrix_SC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
     void setImageFromMatrix_WC_in_block(float** mat,QImage& img, int shift_x=0, int shift_y=0);
-    unsigned int getWidth();
+	void setImageFromMatrix_WC_in_block(float** mat,QImage& img, struct block fine_zoom_block);
+	void setImageFromMatrix_SC_in_block(float** mat,QImage& img, struct block fine_zoom_block);
+	unsigned int getWidth();
     unsigned int getHeight();
     unsigned int getCurrentAnalysisLevel();
     unsigned int getMaxAnalysisLevel();
