@@ -306,7 +306,7 @@ void WorkSpace::updateOutputFineFromDWT()
         this->waveletSynthesis(this->getOutputFineMatrix(), width, height);
     }
 
-	setImageFromDWTMatrix(this->getOutputFineMatrix(),this->output_fine_img);
+    setImageFromFineMatrix(this->getOutputFineMatrix(),this->output_fine_img);
 }
 
 /**
